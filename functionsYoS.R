@@ -6,7 +6,7 @@
   }
   
   # AnnuityFunction
-  annuity <- function(age, rate, sexe = "F"){
+  annuity <- function(age, rate=.02, sexe = "F"){
     years <- 0:(150-age) #probability after age 150 usually negligible
     v <- exp(-years*rate)
     if(sexe == "F"){
@@ -17,47 +17,48 @@
   }
   
   # Function that simulate the nb of years of stability for 1 scenario for
-  StabilityCalc2Pop <- function(nbPoor, nbRich, agePoor, ageRich, assetPoor,
-                                assetRich, epsilonDown = .1){
+  StabilityCalc2Pop <- function(nb1, nb2, age1, age2, asset1,
+                                asset2, epsilonDown = .1){
     rate <- .02 #fix interest
     #simul death
-    survProbPoor <- c(tpx(1,agePoor:120),0) #no one survive to age 121
-    survProbRich <- c(tpx(1,ageRich:120),0) #no one survive to age 121
-    survPoor <- c(nbPoor,numeric(length(survProbPoor)))
-    for (t in 1:length(survProbPoor)) {
-      survPoor[t+1] <- rbinom(1,survPoor[t],survProbPoor[t])
+    survProb1 <- c(tpx(1,age1:120),0) #no one survive to age 121
+    survProb2 <- c(tpx(1,age2:120),0) #no one survive to age 121
+    surv1 <- c(nb1,numeric(length(survProb1)))
+    for (t in 1:length(survProb1)) {
+      surv1[t+1] <- rbinom(1,surv1[t],survProb1[t])
     }
-    survRich <- c(nbRich,numeric(length(survProbRich)))
-    for (t in 1:length(survProbRich)) {
-      survRich[t+1] <- rbinom(1,survRich[t],survProbRich[t])
+    surv2 <- c(nb2,numeric(length(survProb2)))
+    for (t in 1:length(survProb2)) {
+      surv2[t+1] <- rbinom(1,surv2[t],survProb2[t])
     }
     
     #preCompute the annuities
-    annuitiesPoor <- sapply(agePoor:120,function(a) annuity(a,rate))
-    annuitiesRich<- sapply(ageRich:120,function(a) annuity(a,rate))
+    annuities1 <- sapply(age1:120,function(a) annuity(a,rate))
+    annuities2<- sapply(age2:120,function(a) annuity(a,rate))
     
     #compute first benefit
-    BRich <- assetRich/annuitiesRich[1]
-    BPoor <- assetPoor/annuitiesPoor[1]
+    B2 <- asset2/annuities2[1]
+    B1 <- asset1/annuities1[1]
     
     #create adjustment vector
-    alpha <- rep(1,max(length(survProbRich),length(survProbPoor)))
+    lenAlpha <- max(length(survProb2),length(survProb1))
+    alpha <- rep(1,lenAlpha)
     
-    for (t in 1:max(length(survProbRich),length(survProbPoor))) {
-      deathPoor <- survPoor[t]-survPoor[t+1]
-      deathRich <- survRich[t]-survRich[t+1]
+    for (t in 1:lenAlpha) {
+      death1 <- surv1[t]-surv1[t+1]
+      death2 <- surv2[t]-surv2[t+1]
       
       #if no one left in pool set stability as max value
-      if((survRich[t+1]+survPoor[t+1])==0){
+      if((surv2[t+1]+surv1[t+1])==0){
         stability <- t-1
         break
       }
       
       #compute adjustment
-      alpha[t] <- ((survPoor[t]*BPoor*survProbPoor[t]*annuitiesPoor[t+1]
-                    +survRich[t]*BRich*survProbRich[t]*annuitiesRich[t+1])
-                   /(survPoor[t+1]*BPoor*annuitiesPoor[t+1]
-                     +survRich[t+1]*BRich*annuitiesRich[t+1]))
+      alpha[t] <- ((surv1[t]*B1*survProb1[t]*annuities1[t+1]
+                    +surv2[t]*B2*survProb2[t]*annuities2[t+1])
+                   /(surv1[t+1]*B1*annuities1[t+1]
+                     +surv2[t+1]*B2*annuities2[t+1]))
       
       #check if benefits are still stable
       if(prod(alpha)<(1-epsilonDown)){
@@ -65,12 +66,11 @@
         break
       }
       
-      BPoor <- alpha[t]*BPoor
-      BRich <- alpha[t]*BRich
+      B1 <- alpha[t]*B1
+      B2 <- alpha[t]*B2
     }
     stability
   }
-  
   
   # Extract smoothed quantile(1-beta in stability definition) to 
   # get continuous stability
@@ -93,6 +93,47 @@
     VaR
   }
   
+  # Compute probability that cumulative adjustment is under treshold at specific time
+  thetaK <- function(timeK, nb1=100,nb2=0,age1=65,age2=65, ben1=1000, ben2=1000,
+                     epsilon = .1){
+    kp1 <- tpx(timeK, age1)
+    if(nb2==0){
+      return(pbinom(nb1*kp1/(1-epsilon), nb1, kp1, lower.tail = F))
+    }
+    
+    rfrate <- .02
+    kp2 <- tpx(timeK, age2)
+    ak1 <- as.vector(annuity(age1,rfrate))
+    ak2 <- as.vector(annuity(age2,rfrate))
+    y <- ben2/ben1
+    
+    c <- (nb1*kp1*ak1+y*nb2*kp2*ak2)/(1-epsilon)
+    
+    nk1 <- 0:nb1
+    
+    biggerCst <- (c-nk1*ak1)/(y*ak2)
+    probC1 <- dbinom(nk1,nb1,kp1)
+    probC2 <- pbinom(biggerCst, nb2, kp2, lower.tail = F)
+    
+    return(sum(probC1*probC2))
+  }
+  
+  #compute theApprox for YoS presented in section 11.2
+  compApproxYoS <- function(nb1=100,nb2=0,age1=65,age2=65, ben1=1000, ben2=1000,
+                            epsilon = .1, beta = .95){
+    prob <- 0
+    for (t in 1:50) {
+      prevProb <- prob
+      prob <- thetaK(t, nb1,nb2,age1,age2, ben1, ben2, epsilon)
+      if(prob>1-beta){
+        return((t-1)*(prob-(1-beta))/(prob-prevProb)
+               +t*(1-(prob-(1-beta))/(prob-prevProb)))
+        # return((t-1)) 
+      }
+    }
+  }
+  
+  
 }
 
 
@@ -112,34 +153,44 @@ nbSimul <- 1000 ##Low nb of simulation to keep example quick to run
 beta <- .95
 epsilonDown <- .1
 
-#different scenarios (100poor+0Rich, 200poor+0Rich, 100poor+100Rich)
-nbPoor <- c(100,200,100)
-nbRich <- c(0,0,100)
+#different scenarios (100_C1+0_C2, 200_C1+0_C2, 100_C1+100_C2)
+nb1 <- 100
+nb2 <- 100
 ##Other scenario details
-agePoor <- 65
-assetPoor <- 100000
-assetRich <- 1000000
-ageRich <- 65
+age1 <- 65
+benefit1 <- 1000
+benefit2 <- 10000
+age2 <- c(60,65,70)
 
 
 
-# Comput Years of Stability (YoS)
+# Compute Years of Stability (YoS)
 
 ## Compute simulation of when the number of year after which the epsilon 
 ## threshold is busted for 3 distinct scenario
 Stability <- sapply(1:3,
                     function(x) replicate(nbSimul,
-                                          StabilityCalc2Pop(nbPoor[x]
-                                                            ,nbRich[x]
-                                                            ,agePoor
-                                                            ,ageRich
-                                                            ,assetPoor
-                                                            ,assetRich
+                                          StabilityCalc2Pop(nb1
+                                                            ,nb2
+                                                            ,age1
+                                                            ,age2[x]
+                                                            ,benefit1*annuity(age1)
+                                                            ,benefit2*annuity(age2[x])
                                                             ,epsilonDown = epsilonDown)))
 ## Compute a smoother version of the VaR (1-beta) to get the simulated number 
 ## of years of stability for the 3 distinct scenario
-riskStability <- sapply(1:length(nbPoor),
+riskStability <- sapply(1:length(age2),
                         function(j) smoothedQuantiles(Stability[,j],1-beta))
 riskStability
 
+
+
+
+
+## Compute Approx for YoS
+riskStabilityApprox <- sapply(1:3,
+                        function(x) compApproxYoS(nb1,nb2,age1,age2[x]
+                                                  ,benefit1,benefit2
+                                                  ,epsilon = epsilonDown))
+riskStabilityApprox
 
