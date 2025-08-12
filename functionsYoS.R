@@ -1,4 +1,4 @@
-#######Create Base functions
+#######Create Base functions #####
 {
   # Surival prob function with Markham law
   tpx <- function(t,x,A = .0001, B = .0001, c =1.089){ #base parameter female
@@ -144,7 +144,7 @@
 
 
 
-######Example Simulation
+######Example Simulation #####
 
 #nb of simulations from which we will extract the 1-beta quatile from
 nbSimul <- 1000 ##Low nb of simulation to keep example quick to run
@@ -187,10 +187,124 @@ riskStability
 
 
 
-## Compute Approx for YoS
+#Compute Approx for YoS
 riskStabilityApprox <- sapply(1:3,
                         function(x) compApproxYoS(nb1,nb2,age1,age2[x]
                                                   ,benefit1,benefit2
                                                   ,epsilon = epsilonDown))
 riskStabilityApprox
+
+
+
+######Example Contour plot with Approximation #####
+
+####Compute riskStabilityApprox (5 to 20 second to run)
+{
+  nb1 <- 100
+  nb2 <- 100
+  age1 <- 65
+  benefit1 <- 1000
+  
+  age2 <- seq(55, 75, by = .1)
+  benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 100))
+  benefit2 <- benefit1*benefitMultiplier
+  
+  riskStabilityApprox <- matrix(0,length(age2),length(benefitMultiplier))
+  for (i in seq_along(age2)) {
+    for (j in seq_along(benefit2)) {
+      riskStabilityApprox[i,j] <- compApproxYoS(nb1, nb2, age1, age2[i], benefit1,
+                                                benefit2[j], epsilonDown, .95)
+    }
+  }
+}
+
+# get better (green) and worse (red) areas
+{
+  allAges <- age2
+  
+  homoApproxYoS <- compApproxYoS(nb1+nb2, age1 = age1)
+  riskSmallHomoApprox <- compApproxYoS(nb1, age1 = age1)
+  
+  dfbetterApproxYoS <- list(YoS = riskStabilityApprox[riskStabilityApprox>=homoApproxYoS])
+  dfbetterApproxYoS$age2 <-  matrix(rep(age2, length(benefitMultiplier)),
+                                    ncol = length(benefitMultiplier))[riskStabilityApprox
+                                                                      >=homoApproxYoS]
+  dfbetterApproxYoS$benefitMultiplier <- matrix(rep(benefitMultiplier, length(age2)),
+                                                nrow = length(age2),
+                                                byrow = T)[riskStabilityApprox>=homoApproxYoS]
+  
+  
+  dfworsteApproxYoS <- list(YoS = riskStabilityApprox[riskStabilityApprox<=riskSmallHomoApprox])
+  dfworsteApproxYoS$age2 <-  matrix(rep(age2, length(benefitMultiplier)),
+                                    ncol = length(benefitMultiplier))[riskStabilityApprox
+                                                                      <=riskSmallHomoApprox]
+  dfworsteApproxYoS$benefitMultiplier <- matrix(rep(benefitMultiplier, length(age2)),
+                                                nrow = length(age2),
+                                                byrow = T)[riskStabilityApprox<=riskSmallHomoApprox]
+  
+}
+
+# contour Plot
+{
+  # Prepare data in long format
+  df <- melt(riskStabilityApprox)
+  colnames(df) <- c("ageIndex", "benefitIndex", "YoS")
+  df$benefitMultiplier <- benefitMultiplier[df$benefitIndex]
+  df$age2 <- age2[df$ageIndex]
+  
+  # Create contour plot
+  p <- plot_ly(
+    data = df,
+    x = ~age2,
+    y = ~benefitMultiplier,
+    z = ~YoS,
+    type = "contour",
+    showscale = FALSE,
+    contours = list(
+      coloring = "lines",  # or "lines", "none"
+      showlabels = TRUE
+    ),
+    line = list(smoothing = 0),
+    colorscale = list(c(0, "black"), c(1, "black")),
+    reversescale = FALSE
+  ) %>%
+    layout(
+      plot_bgcolor = "lightgrey",   # uniform background color
+      paper_bgcolor = "white",  # outside background
+      title = paste("Stability with Size Cohort 2:",nb2,"people"),
+      xaxis = list(title = "Age Cohort 2",
+                   showgrid = FALSE,
+                   range = c(min(df$age2), max(df$age2))
+      ),
+      yaxis = list(title = "Benefit: Cohort 2/Cohort 1",
+                   type = "log",
+                   showgrid = FALSE,
+                   range= log(c(min(df$benefitMultiplier), max(df$benefitMultiplier)),10)
+      ),
+      showlegend = F
+    )%>%
+    add_trace(
+      data = dfbetterApproxYoS,
+      x = ~age2,
+      y = ~benefitMultiplier,
+      type = "scatter",
+      mode = "markers",
+      marker = list(color = "rgba(144, 238, 144, 0.3)", size = 6, symbol = "circle"),
+      name = "Preferred Region",
+      inherit = FALSE
+    )%>%
+    add_trace(
+      data = dfworsteApproxYoS,
+      x = ~age2,
+      y = ~benefitMultiplier,
+      type = "scatter",
+      mode = "markers",
+      marker = list(color = "rgba(255, 99, 71, 0.2)", size = 6, symbol = "circle"),
+      name = "No No Region",
+      inherit = FALSE
+    )
+  
+  p
+}
+
 
