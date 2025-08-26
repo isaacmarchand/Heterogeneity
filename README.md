@@ -12,7 +12,7 @@ Some code to create a surface plot is also presented
 
 Contain all the plot in the report/paper.
 
-Each plot is separated by a comment describing the plot generated underneath. Before each plots a list of parameter that can be changed to change the content of the plot are listed. The plots are separated by their section in the report. 
+Each plot is separated by a comment describing the plot generated underneath. Before each plots a list of parameter that can be changed to adjust the content of the plot are listed. The plots are separated by their section in the report. 
 
 All the data contained in the plot comes from the pre simulated data contained in the 'simulatedData' folder.
 
