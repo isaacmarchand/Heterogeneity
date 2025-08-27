@@ -1241,7 +1241,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
 
 
 
-####### SD Contour Plot Both Groups' Perspective ########
+####### Implied Nb1 Contour Plot Both Groups' Perspective ########
 
 # adjustable parameters
 nb2 <- 100       # 50, 100 and 200 available for all
