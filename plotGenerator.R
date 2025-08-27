@@ -1,6 +1,6 @@
 library(plotly)
 library(reshape2)
-###### Base functions #####
+###### Base functions to run first #####
 {
   # Surival prob function with Markham law
   tpx <- function(t,x,A = .0001, B = .0001, c =1.089){ #base parameter female
@@ -48,9 +48,9 @@ library(reshape2)
 
 # adjustable parameters
 nb2 <- 100      # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
-age1 <- 65      #only 60, 65 and 70 available
+age1 <- 65      # only 60, 65 and 70 available
 
-nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500)
+nb1 <- 100      # Don't recommend to change, but some scenario available at nb1 = (10 and 500)
 
 # Generate plot
 {
@@ -474,7 +474,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
 ###############################################################################
 # Plots for Section 4 SD 
 # (Adjustable parameter constraint are only suggestion to match section 5,
-#  any value possible since data is generated in the script)
+#  any values are possible since data is generated in the script)
 ###############################################################################
 
 ####### SD Contour Plot Group1's Perspective ########
