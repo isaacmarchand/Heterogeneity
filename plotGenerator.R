@@ -471,6 +471,58 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
 
 
 
+####### SD Homogeneous evolution with nb1 ########
+
+# adjustable parameters
+nb1 <- seq(1,1000)     # only possibility
+age1 <- c(60,65,70)   # only 60, 65 and 70 available, can select some are all of them
+
+# Generate plot (put it in full screen before saving for better placement of legend)
+{
+  
+  # compute  stability surface
+  {
+    riskStability <- matrix(0, length(age1), length(nb1))
+    for (i in seq_along(age1)) {
+      name <- paste("simulatedData/ControlledYoS_ParrallelComputingHomo",age1[i],".rds", sep = "")
+      riskStability[i,] <- readRDS(name)
+    }
+  }
+  
+  #plot
+  {
+    colors <- c( "red", "green", "blue", "cyan", "magenta", "gold","black") #can use rgb code instead
+    colors <- rep(colors, length.out = nrow(riskStability))  # ensure enough colors
+    
+    p <- plot_ly() 
+    
+    # Add each column of slices as a separate trace
+    for (i in 1:nrow(riskStability)) {
+      p <- add_trace(
+        p,
+        x = nb1,
+        y = riskStability[i,],
+        type = 'scatter',
+        mode = 'lines',
+        line = list(color = colors[i]),
+        name = paste0("Age:", age1[i])
+      )
+    }
+    
+    # Final layout
+    p <- layout(
+      p,
+      xaxis = list(title = "Nb of pool member"),
+      yaxis = list(title = "SIP"),
+      legend = list(x = 0.8, y = 0),
+      title = paste("Homogeneous Pool")
+    )
+    
+    p
+  }
+}
+
+
 ###############################################################################
 # Plots for Section 4 SD 
 # (Adjustable parameter constraint are only suggestion to match section 5,
