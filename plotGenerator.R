@@ -474,7 +474,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
 ####### SD Homogeneous evolution with nb1 ########
 
 # adjustable parameters
-nb1 <- seq(1,1000)     # only possibility
+nb1 <- seq(1,5000)     # only possibility
 age1 <- c(60,65,70)   # only 60, 65 and 70 available, can select some are all of them
 
 # Generate plot (put it in full screen before saving for better placement of legend)
@@ -484,7 +484,7 @@ age1 <- c(60,65,70)   # only 60, 65 and 70 available, can select some are all of
   {
     riskStability <- matrix(0, length(age1), length(nb1))
     for (i in seq_along(age1)) {
-      name <- paste("simulatedData/ControlledYoS_ParrallelComputingHomo",age1[i],".rds", sep = "")
+      name <- paste("simulatedData/YoS_ParrallelComputingHomo",age1[i],".rds", sep = "")
       riskStability[i,] <- readRDS(name)
     }
   }
