@@ -480,11 +480,11 @@ age1 <- c(60,65,70)   # only 60, 65 and 70 available, can select some are all of
 # Generate plot (put it in full screen before saving for better placement of legend)
 {
   
-  # compute  stability surface
+  # import  stability surface
   {
     riskStability <- matrix(0, length(age1), length(nb1))
     for (i in seq_along(age1)) {
-      name <- paste("simulatedData/YoS_ParrallelComputingHomo",age1[i],".rds", sep = "")
+      name <- paste("simulatedData/controlledYoS_ParrallelComputingHomo",age1[i],".rds", sep = "")
       riskStability[i,] <- readRDS(name)
     }
   }
@@ -521,6 +521,119 @@ age1 <- c(60,65,70)   # only 60, 65 and 70 available, can select some are all of
     p
   }
 }
+
+
+
+####### SD Heterogeneous mortality evolution with nb2 ########
+
+# adjustable parameters
+nb1 = 100
+age1 = 65
+nb2 <- seq(0,200)     # only option
+age2 <- c(55,60,65,70,75)   # only 55, 60, 65, 70 and 75 available
+
+# Generate plot (put it in full screen before saving for better placement of legend)
+{
+  
+  # compute  stability surface
+  {
+    riskStability <- matrix(0, length(age2), length(nb2))
+    for (i in seq_along(age2)) {
+      name <- paste("simulatedData/controlledYoS_ParrallelComputingHeteAge",age2[i],".rds", sep = "")
+      riskStability[i,] <- readRDS(name)
+    }
+  }
+  
+  #plot
+  {
+    colors <- c( "red", "green", "blue", "cyan", "magenta", "gold","black") #can use rgb code instead
+    colors <- rep(colors, length.out = nrow(riskStability))  # ensure enough colors
+    
+    p <- plot_ly() 
+    
+    # Add each column of slices as a separate trace
+    for (i in 1:nrow(riskStability)) {
+      p <- add_trace(
+        p,
+        x = nb2,
+        y = riskStability[i,],
+        type = 'scatter',
+        mode = 'lines',
+        line = list(color = colors[i]),
+        name = paste0("Age:", age2[i])
+      )
+    }
+    
+    # Final layout
+    p <- layout(
+      p,
+      xaxis = list(title = "Nb in group 2"),
+      yaxis = list(title = "one-year SD"),
+      legend = list(x = 0.8, y = 0),
+      title = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1, sep = "")
+    )
+    
+    p
+  }
+  
+}
+
+
+
+####### SD Heterogeneous Wealth evolution with nb2 ########
+
+# adjustable parameters
+nb1 = 100
+age1 = 65
+nb2 <- seq(0,200)     
+BMulti <- c(.2,.5,1,2,5) #ratio of benefit2/benefit1
+
+# Generate plot (put it in full screen before saving for better placement of legend)
+{
+  
+  # compute  stability surface
+  {
+    riskStability <- matrix(0, length(BMulti), length(nb2))
+    for (i in seq_along(BMulti)) {
+      name <- paste("simulatedData/controlledYoS_ParrallelComputingHeteWealth",BMulti[i],".rds", sep = "")
+      riskStability[i,] <- readRDS(name)
+    }
+  }
+  
+  #plot
+  {
+    colors <- c( "red", "green", "blue", "cyan", "magenta", "gold","black") #can use rgb code instead
+    colors <- rep(colors, length.out = nrow(riskStability))  # ensure enough colors
+    
+    p <- plot_ly() 
+    
+    # Add each column of slices as a separate trace
+    for (i in 1:nrow(riskStability)) {
+      p <- add_trace(
+        p,
+        x = nb2,
+        y = riskStability[i,],
+        type = 'scatter',
+        mode = 'lines',
+        line = list(color = colors[i]),
+        name = paste0("y:", BMulti[i])
+      )
+    }
+    
+    # Final layout
+    p <- layout(
+      p,
+      xaxis = list(title = "Nb in group 2"),
+      yaxis = list(title = "one-year SD"),
+      legend = list(x = 0.8, y = 0),
+      title = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1, sep = "")
+    )
+    
+    p
+  }
+  
+}
+
 
 
 ###############################################################################
@@ -1045,7 +1158,7 @@ age1 <- c(60,65,70)   # only 60, 65 and 70 available in section 5
 nb1 = 100
 age1 = 65
 nb2 <- seq(0,200)     
-age2 <- c(55,65,75)   # only 60, 65 and 70 available in section 5
+age2 <- c(55, 60,65,70,75)   # only 55, 60, 65, 70 and 75 available in section 5
 
 # Generate plot (put it in full screen before saving for better placement of legend)
 {
