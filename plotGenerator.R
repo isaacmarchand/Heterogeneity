@@ -262,7 +262,7 @@ age1 <- 65      #only 60, 65 and 70 available
 ####### SIP 2D Plot Age Heterogeneity ########
 
 # adjustable parameters
-nb2 <- 100      # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
+nb2 <- 100       # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
 age1 <- 65      # only 60, 65 and 70 available
 diffWealth <- c(.2, .5, 1, 2, 5) # Any amount of value from interval [.1,10], Benefit of group 2 compared to group 1
 
@@ -471,7 +471,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
 
 
 
-####### SD Homogeneous evolution with nb1 ########
+####### SIP Homogeneous evolution with nb1 ########
 
 # adjustable parameters
 nb1 <- seq(1,5000)     # only possibility
