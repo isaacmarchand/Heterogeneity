@@ -1,5 +1,7 @@
 library(plotly)
 library(reshape2)
+######2dColors
+rgbSOA <- matrix(c(2,77,124,186,191,51,119,196,213,253,206,7,210,49,56,1,1,1, 255,255,255), byrow = TRUE, ncol = 3)/255
 ###### Base functions to run first #####
 {
   # Surival prob function with Markham law
@@ -47,7 +49,7 @@ library(reshape2)
 ####### SIP Contour Plot Group1's Perspective ########
 
 # adjustable parameters
-nb2 <- 100      # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
+nb2 <- 100     # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
 age1 <- 65      # only 60, 65 and 70 available
 
 nb1 <- 100      # Don't recommend to change, but some scenario available at nb1 = (10 and 500)
@@ -297,7 +299,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
 
   #plot
   {
-    colors <- c( "red", "green", "blue", "cyan", "magenta", "gold","black") #can use rgb code instead
+    colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
     colors <- rep(colors, length.out = ncol(slices))  # ensure enough colors
     p <- plot_ly() 
     
@@ -368,7 +370,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
 # adjustable parameters
 nb2 <- 100      # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
 age1 <- 65      # only 60, 65 and 70 available
-age2 <- c(60,65,70) # Any amount of value from interval [55,75]
+age2 <- c(55, 60,65,70, 75) # Any amount of value from interval [55,75]
 
 nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500)
 
@@ -401,7 +403,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
   
   #plot
   {
-    colors <- c( "red", "green", "blue", "cyan", "magenta", "gold","black") #can use rgb code instead
+    colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
     colors <- rep(colors, length.out = nrow(slices))  # ensure enough colors
     
     p <- plot_ly() 
@@ -491,7 +493,7 @@ age1 <- c(60,65,70)   # only 60, 65 and 70 available, can select some are all of
   
   #plot
   {
-    colors <- c( "red", "green", "blue", "cyan", "magenta", "gold","black") #can use rgb code instead
+    colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
     colors <- rep(colors, length.out = nrow(riskStability))  # ensure enough colors
     
     p <- plot_ly() 
@@ -546,7 +548,7 @@ age2 <- c(55,60,65,70,75)   # only 55, 60, 65, 70 and 75 available
   
   #plot
   {
-    colors <- c( "red", "green", "blue", "cyan", "magenta", "gold","black") #can use rgb code instead
+    colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
     colors <- rep(colors, length.out = nrow(riskStability))  # ensure enough colors
     
     p <- plot_ly() 
@@ -602,7 +604,7 @@ BMulti <- c(.2,.5,1,2,5) #ratio of benefit2/benefit1
   
   #plot
   {
-    colors <- c( "red", "green", "blue", "cyan", "magenta", "gold","black") #can use rgb code instead
+    colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
     colors <- rep(colors, length.out = nrow(riskStability))  # ensure enough colors
     
     p <- plot_ly() 
@@ -919,7 +921,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
   
   #plot
   {
-    colors <- c( "red", "green", "blue", "cyan", "magenta", "gold","black") #can use rgb code instead
+    colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
     colors <- rep(colors, length.out = ncol(slices))  # ensure enough colors
     p <- plot_ly() 
     
@@ -1030,7 +1032,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
   
   #plot
   {
-    colors <- c( "red", "green", "blue", "cyan", "magenta", "gold","black") #can use rgb code instead
+    colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
     colors <- rep(colors, length.out = nrow(slices))  # ensure enough colors
     
     p <- plot_ly() 
@@ -1119,7 +1121,7 @@ age1 <- c(60,65,70)   # only 60, 65 and 70 available in section 5
   
   #plot
   {
-    colors <- c( "red", "green", "blue", "cyan", "magenta", "gold","black") #can use rgb code instead
+    colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
     colors <- rep(colors, length.out = nrow(riskStability))  # ensure enough colors
     
     p <- plot_ly() 
@@ -1176,7 +1178,7 @@ age2 <- c(55, 60,65,70,75)   # only 55, 60, 65, 70 and 75 available in section 5
   
   #plot
   {
-    colors <- c( "red", "green", "blue", "cyan", "magenta", "gold","black") #can use rgb code instead
+    colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
     colors <- rep(colors, length.out = nrow(riskStability))  # ensure enough colors
     
     p <- plot_ly() 
@@ -1234,7 +1236,7 @@ BMulti <- c(.2,.5,1,2,5) #ratio of benefit2/benefit1
   
   #plot
   {
-    colors <- c( "red", "green", "blue", "cyan", "magenta", "gold","black") #can use rgb code instead
+    colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
     colors <- rep(colors, length.out = nrow(riskStability))  # ensure enough colors
     
     p <- plot_ly() 
