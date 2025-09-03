@@ -1,7 +1,9 @@
 library(plotly)
 library(reshape2)
-######2dColors
+library(RColorBrewer)
+######Colors
 rgbSOA <- matrix(c(2,77,124,186,191,51,119,196,213,253,206,7,210,49,56,1,1,1, 255,255,255), byrow = TRUE, ncol = 3)/255
+winterColormap <- c(rgb(0,(0:256)/256,(1-((0:256)/256))*.5+.5))
 ###### Base functions to run first #####
 {
   # Surival prob function with Markham law
@@ -526,7 +528,7 @@ age1 <- c(60,65,70)   # only 60, 65 and 70 available, can select some are all of
 
 
 
-####### SD Heterogeneous mortality evolution with nb2 ########
+####### SD Heterogeneous Mortality evolution with nb2 ########
 
 # adjustable parameters
 nb1 = 100
@@ -1154,7 +1156,7 @@ age1 <- c(60,65,70)   # only 60, 65 and 70 available in section 5
 }
 
 
-####### SD Heterogeneous mortality evolution with nb2 ########
+####### SD Heterogeneous Mortality evolution with nb2 ########
 
 # adjustable parameters
 nb1 = 100
@@ -1268,6 +1270,296 @@ BMulti <- c(.2,.5,1,2,5) #ratio of benefit2/benefit1
   
 }
 
+
+
+
+####### SD Heterogeneous Wealth evolution with TOTAL participants ########
+
+# adjustable parameters
+nb1 = seq(0,100)
+BMulti <- c(.1,.2,1,5,10) #ratio of benefit2/benefit1
+
+age = 65
+nb2 <- rev(nb1)
+
+# Generate plot (put it in full screen before saving for better placement of legend)
+{
+  
+  # compute  stability surface
+  {
+    riskStability <- matrix(0, length(BMulti), length(nb1))
+    for (i in seq_along(nb1)) {
+      riskStability[,i] <- sapply(BMulti,function(x) SD1Periode(age, 1000, nb1[i],
+                                                             age2 = age,
+                                                             B02 = 1000*x,
+                                                             nb2 = nb2[i]))
+    }
+  }
+  
+  #plot
+  {
+    colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
+    colors <- rep(colors, length.out = nrow(riskStability))  # ensure enough colors
+    
+    p <- plot_ly() 
+    
+    # Add each column of slices as a separate trace
+    for (i in 1:nrow(riskStability)) {
+      p <- add_trace(
+        p,
+        x = nb2,
+        y = riskStability[i,],
+        type = 'scatter',
+        mode = 'lines',
+        line = list(color = colors[i]),
+        name = paste0("y:", BMulti[i])
+      )
+    }
+    
+    # Final layout
+    p <- layout(
+      p,
+      xaxis = list(title = "Nb in group 1"),
+      yaxis = list(title = "one-year SD", autorange = 'reversed'),
+      legend = list(x = 0.5, y = 0),
+      title = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1, sep = "")
+    )
+    
+    p
+  }
+  
+}
+
+
+
+####### SD 3D Homogeneous Nb People to Age ########
+
+# adjustable parameters
+age1 <- seq(55,75)
+nb1 <- seq(100,500,25) 
+
+nb2 <- 0 # to stay homogeneous
+# Generate plot
+{
+  # compute stability surface
+  {
+    riskStability <- matrix(0, length(age1), length(nb1))
+    for (i in seq_along(age1)) {
+      riskStability[i,] <- sapply(nb1,function(x)SD1Periode(age1[i],
+                                                            1000,
+                                                            x,
+                                                            nb2 = nb2))
+    }
+  }
+  
+  # 3D Plot
+  {
+    p <- plot_ly()%>%add_surface(
+      x = ~age1,
+      y = ~nb1,
+      z = ~t(riskStability),
+      type = "surface",
+      showscale=F,
+      colors = winterColormap) %>%
+      layout(
+        title = "Approx Stability of Heterogeneous Pool",
+        scene = list(
+          xaxis = list(title = "age"),
+          yaxis = list(title = "nb1"),
+          zaxis = list(title = "SD"),
+          aspectratio = list(x = 1, y = 2, z = 1))
+      )
+    # Add grid lines in x-direction
+    for (j in seq(1,length(nb1))) {
+      p <- p %>% add_trace(
+        x = age1,
+        y = rep(nb1[j], length(age1)),
+        z = riskStability[,j ],
+        type = "scatter3d",
+        mode = "lines",
+        line = list(color = "black", width = 2),
+        showlegend = FALSE
+      )
+    }
+    
+    # Add grid lines in y-direction
+    for (i in seq(1,length(age1))) {
+      p <- p %>% add_trace(
+        x = rep(age1[i], length(nb1)),
+        y = nb1,
+        z = riskStability[i,],
+        type = "scatter3d",
+        mode = "lines",
+        line = list(color = "black", width = 2),
+        showlegend = FALSE
+      )
+    }
+    p
+  }  
+}
+
+
+
+####### SD 3D Heterogeneous Mortality evolution with nb2 ########
+
+# adjustable parameters
+nb1 = 100
+age1 = 65
+age2 <- seq(55,80)
+nb2 <- seq(0,500,25) 
+
+# Generate plot
+{
+  # compute stability surface
+  {
+    riskStability <- matrix(0, length(age2), length(nb2))
+    for (i in seq_along(age2)) {
+      riskStability[i,] <- sapply(nb2,function(x)SD1Periode(age1,
+                                                            1000,
+                                                            nb1,
+                                                            nb2 = x,
+                                                            age2 = age2[i],
+                                                            B02 = 1000))
+    }
+  }
+  
+  # 3D Plot
+  {
+    p <- plot_ly()%>%add_surface(
+      x = ~age2,
+      y = ~nb2,
+      z = ~t(riskStability),
+      type = "surface",
+      showscale=F,
+      colors = winterColormap) %>%
+      layout(
+        title = "Approx Stability of Heterogeneous Pool",
+        scene = list(
+          xaxis = list(title = "age"),
+          yaxis = list(title = "nb2"),
+          zaxis = list(title = "SD"),
+          aspectratio = list(x = 1, y = 2, z = 1))
+      )
+    # Add grid lines in x-direction
+    for (j in seq(1,length(nb2))) {
+      p <- p %>% add_trace(
+        x = age2,
+        y = rep(nb2[j], length(age2)),
+        z = riskStability[,j ],
+        type = "scatter3d",
+        mode = "lines",
+        line = list(color = "black", width = 2),
+        showlegend = FALSE
+      )
+    }
+    
+    # Add grid lines in y-direction
+    for (i in seq(1,length(age2))) {
+      p <- p %>% add_trace(
+        x = rep(age2[i], length(nb2)),
+        y = nb2,
+        z = riskStability[i,],
+        type = "scatter3d",
+        mode = "lines",
+        line = list(color = "black", width = 2),
+        showlegend = FALSE
+      )
+    }
+    
+    #thick line on homogeneous case
+    p <- p %>% add_trace(
+      x = rep(age1, length(nb2)),
+      y = nb2,
+      z = riskStability[which(age1==age2),],
+      type = "scatter3d",
+      mode = "lines",
+      line = list(color = "black", width = 10),
+      showlegend = FALSE
+    )
+    p
+  }  
+}
+
+####### SD 3D Heterogeneous Wealth evolution with nb2 ########
+
+# adjustable parameters
+nb1 = 100
+age1 = 65
+age2 <- 65
+y <- exp(seq(log(1/10),log(10), length.out = 21))
+nb2 <- seq(0,500,25) 
+
+# Generate plot
+{
+  # compute stability surface
+  {
+    riskStability <- matrix(0, length(y), length(nb2))
+    for (i in seq_along(y)) {
+      riskStability[i,] <- sapply(nb2,function(x)SD1Periode(age1,
+                                                            1000,
+                                                            nb1,
+                                                            nb2 = x,
+                                                            age2 = age2,
+                                                            B02 = 1000*y[i]))
+    }
+  }
+  
+  # 3D Plot
+  {
+    p <- plot_ly()%>%add_surface(
+      x = ~y,
+      y = ~nb2,
+      z = ~t(riskStability),
+      type = "surface",
+      showscale=F,
+      colors = winterColormap) %>%
+      layout(
+        title = "Approx Stability of Heterogeneous Pool",
+        scene = list(
+          xaxis = list(title = "initial benefits y", type = "log"),
+          yaxis = list(title = "nb2"),
+          zaxis = list(title = "SD"),
+          aspectratio = list(x = 1, y = 2, z = 1))
+      )
+    # Add grid lines in x-direction
+    for (j in seq(1,length(nb2))) {
+      p <- p %>% add_trace(
+        x = y,
+        y = rep(nb2[j], length(y)),
+        z = riskStability[,j ],
+        type = "scatter3d",
+        mode = "lines",
+        line = list(color = "black", width = 2),
+        showlegend = FALSE
+      )
+    }
+    
+    # Add grid lines in y-direction
+    for (i in seq(1,length(y))) {
+      p <- p %>% add_trace(
+        x = rep(y[i], length(nb2)),
+        y = nb2,
+        z = riskStability[i,],
+        type = "scatter3d",
+        mode = "lines",
+        line = list(color = "black", width = 2),
+        showlegend = FALSE
+      )
+    }
+    
+    #thick line on homogeneous case
+    p <- p %>% add_trace(
+      x = rep(1, length(nb2)),
+      y = nb2,
+      z = riskStability[which.min(abs(y-1)),],
+      type = "scatter3d",
+      mode = "lines",
+      line = list(color = "black", width = 10),
+      showlegend = FALSE
+    )
+    p
+  }  
+}
 
 
 #########################################
