@@ -1,11 +1,30 @@
 library(plotly)
 library(reshape2)
 library(RColorBrewer)
-######Colors
-rgbSOA <- matrix(c(2,77,124,186,191,51,119,196,213,253,206,7,210,49,56,1,1,1, 255,255,255), byrow = TRUE, ncol = 3)/255
-winterColormap <- c(rgb(0,(0:256)/256,(1-((0:256)/256))*.5+.5))
+library(reticulate)
+reticulate::use_python("/opt/anaconda3/bin/python3")
+
+# ####if need to install python
+# install.packages("reticulate")
+# library(reticulate)
+# use_python(install_python())
+# py_install(c("kaleido==0.2.1", "plotly"))
+
+###### Design and export choice ####
+exportPath <- "/Users/macbook/Library/Mobile\ Documents/com~apple~CloudDocs/School/SFU/Research/Coding/Plots/September26th/"
+fontType <- 'LMRoman10'
+axisFont <- list(size=15, family = fontType)
+titleFont <- list(size=20, family = fontType)
+legendFont <- list(size=10, family = fontType)
+
+pixelsFullWidth <- 1240*(5.5/8) #removing margins
+pixelsFullHeight <- 1754*(9.3/11) #removing margins
 ###### Base functions to run first #####
 {
+  ######Colors
+  rgbSOA <- matrix(c(2,77,124,186,191,51,119,196,213,253,206,7,210,49,56,1,1,1, 255,255,255), byrow = TRUE, ncol = 3)/255
+  winterColormap <- c(rgb(0,(0:256)/256,(1-((0:256)/256))*.5+.5))
+  
   # Surival prob function with Markham law
   tpx <- function(t,x,A = .0001, B = .0001, c =1.089){ #base parameter female
     exp(-A*t-(B/log(c))*c^x*(c^t-1))
@@ -42,13 +61,72 @@ winterColormap <- c(rgb(0,(0:256)/256,(1-((0:256)/256))*.5+.5))
     sqrt((nb1*p1+y*nb2*p2)^2*(varTerm1-varTerm2))
   }
 
+  
+  # Function that simulate the nb of years of stability for 1 scenario for
+  StabilityCalc2Pop <- function(nb1, nb2, age1, age2, asset1,
+                                asset2, epsilonDown = .1){
+    rate <- .02 #fix interest
+    #simul death
+    survProb1 <- c(tpx(1,age1:120),0) #no one survive to age 121
+    survProb2 <- c(tpx(1,age2:120),0) #no one survive to age 121
+    surv1 <- c(nb1,numeric(length(survProb1)))
+    for (t in 1:length(survProb1)) {
+      surv1[t+1] <- rbinom(1,surv1[t],survProb1[t])
+    }
+    surv2 <- c(nb2,numeric(length(survProb2)))
+    for (t in 1:length(survProb2)) {
+      surv2[t+1] <- rbinom(1,surv2[t],survProb2[t])
+    }
+    
+    #preCompute the annuities
+    annuities1 <- sapply(age1:120,function(a) annuity(a,rate))
+    annuities2<- sapply(age2:120,function(a) annuity(a,rate))
+    
+    #compute first benefit
+    B2 <- asset2/annuities2[1]
+    B1 <- asset1/annuities1[1]
+    
+    #create adjustment vector
+    lenAlpha <- max(length(survProb2),length(survProb1))
+    alpha <- rep(1,lenAlpha)
+    
+    for (t in 1:lenAlpha) {
+      death1 <- surv1[t]-surv1[t+1]
+      death2 <- surv2[t]-surv2[t+1]
+      
+      #if no one left in pool set stability as max value
+      if((surv2[t+1]+surv1[t+1])==0){
+        stability <- t-1
+        break
+      }
+      
+      #compute adjustment
+      alpha[t] <- ((surv1[t]*B1*survProb1[t]*annuities1[t+1]
+                    +surv2[t]*B2*survProb2[t]*annuities2[t+1])
+                   /(surv1[t+1]*B1*annuities1[t+1]
+                     +surv2[t+1]*B2*annuities2[t+1]))
+      
+      #check if benefits are still stable
+      if(prod(alpha)<(1-epsilonDown)){
+        stability <- t-1
+        break
+      }
+      
+      B1 <- alpha[t]*B1
+      B2 <- alpha[t]*B2
+    }
+    stability
+  }
 }
 
 ###############################################################################
-# Plots for Section 5 SIP (or HSAFE)
+# Plots for Section 5 SIP
 ###############################################################################
 
 ####### SIP Contour Plot Group1's Perspective ########
+#dimensions as percentage of page
+w <- 1    #width
+h <- .4  #height
 
 # adjustable parameters
 nb2 <- 100     # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
@@ -123,18 +201,25 @@ nb1 <- 100      # Don't recommend to change, but some scenario available at nb1 
       reversescale = FALSE
     ) %>%
       layout(
+        font = list(family = fontType),
         plot_bgcolor = "lightgrey",   # uniform background color
         paper_bgcolor = "white",  # outside background
-        title = paste("Stability with Size Cohort 2:",nb2,"people"),
+        title = list(text = paste("Stability with Size Cohort 2:",nb2,"people"),
+                     font = titleFont
+                     ),
         xaxis = list(title = "Age Cohort 2",
                      showgrid = FALSE,
-                     range = c(min(df$age2), max(df$age2))
-        ),
-        yaxis = list(title = "Benefit: Cohort 2/Cohort 1",
+                     range = c(min(df$age2), max(df$age2)),
+                     titlefont = axisFont
+                     ),
+        yaxis = list(title = "Banefit ratio: y",
                      type = "log",
                      showgrid = FALSE,
-                     range= log(c(min(df$benefitMultiplier), max(df$benefitMultiplier)),10)
-        ),
+                     range= log(c(min(df$benefitMultiplier),
+                                  max(df$benefitMultiplier)),10),
+                     titlefont = axisFont
+                     ),
+        margin = list(t = 50, b=70),
         showlegend = F
       )%>%
       add_trace(
@@ -157,18 +242,22 @@ nb1 <- 100      # Don't recommend to change, but some scenario available at nb1 
         name = "No No Region",
         inherit = FALSE
       )
-    
-    p
   }
   
+  save_image(p,paste0(exportPath,"SIPContour1Perspective",nb1,nb2,".pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SIPContour1Perspective",nb1,nb2,".pdf"))
 }
 
 
 
 ####### SIP Contour Plot Both Groups' Perspective ########
+#dimensions as percentage of page
+w <- .1    #width
+h <- .4  #height
 
 # adjustable parameters
-nb2 <- 100       # 50, 100 and 200 available for all
+nb2 <- 200       # 50, 100 and 200 available for all
 age1 <- 65      #only 60, 65 and 70 available
 
 # Generate plot
@@ -233,18 +322,24 @@ age1 <- 65      #only 60, 65 and 70 available
       reversescale = FALSE
     ) %>%
       layout(
+        font = list(family = fontType),
         plot_bgcolor = "lightgrey",   # uniform background color
         paper_bgcolor = "white",  # outside background
-        title = paste("Stability with Size Cohort 2:",nb2,"people"),
+        title = list(text=paste("Stability with Size Cohort 2:",nb2,"people"),
+        font = titleFont),
         xaxis = list(title = "Age Cohort 2",
                      showgrid = FALSE,
-                     range = c(min(df$age2), max(df$age2))
+                     range = c(min(df$age2), max(df$age2)),
+                     titlefont = axisFont
         ),
         yaxis = list(title = "Benefit: Cohort 2/Cohort 1",
                      type = "log",
                      showgrid = FALSE,
-                     range= log(c(min(df$benefitMultiplier), max(df$benefitMultiplier)),10)
+                     range= log(c(min(df$benefitMultiplier),
+                                  max(df$benefitMultiplier)),10),
+                     titlefont = axisFont
         ),
+        margin = list(t = 50, b=70),
         showlegend = F
       )%>%
       add_trace(
@@ -257,13 +352,18 @@ age1 <- 65      #only 60, 65 and 70 available
         name = "No No Region",
         inherit = FALSE
       )
-    p
   }
+  save_image(p,paste0(exportPath,"SIPContour2Perspective",nb1,nb2,".pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SIPContour2Perspective",nb1,nb2,".pdf"))
 }
 
 
 
 ####### SIP 2D Plot Age Heterogeneity ########
+#dimensions as percentage of page
+w <- .5    #width
+h <- .3  #height
 
 # adjustable parameters
 nb2 <- 100       # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
@@ -314,7 +414,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
         type = 'scatter',
         mode = 'lines',
         line = list(color = colors[i]),
-        name = paste0("2 has ", diffWealth[i], " times benefits of 1")
+        name = paste0("y= ", diffWealth[i])
       )
     }
     
@@ -326,7 +426,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'gray'),
-      name = paste(nb1+nb2, " Homogeneous from Group 1", sep = "")
+      name = paste(nb1+nb2, " Homogeneous", sep = "")
     )
     
     p <- add_trace(
@@ -336,7 +436,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'black'),
-      name = paste(nb1, " Homogeneous from Group 1", sep = "")
+      name = paste(nb1, " Homogeneous", sep = "")
     )
     
     # Add vertical line at age2 = some value (if desired)
@@ -353,21 +453,32 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
     
     # Final layout
     p <- layout(
+      font = list(family = fontType),
       p,
-      xaxis = list(title = "age of Group 2"),
-      yaxis = list(title = "Nb of Stable Years"),
-      legend = list(x = 0.8, y = 1),
-      title = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1, " / Nb Groupe 2: ", nb2, sep = "")
+      xaxis = list(title = "age of Group 2",
+                   titlefont = axisFont),
+      yaxis = list(title = "Nb of Stable Years",
+                   titlefont = axisFont),
+      legend = list(x = .67, y = 1.05,font = legendFont),
+      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1,
+                                "\n / Nb Groupe 2: ", nb2, sep = ""),
+                   font = titleFont
+      ),
+      margin = list(t = 70, b=70)
     )
-    
-    p
   }
-  
+  save_image(p,paste0(exportPath,"SIPMortalityHeteWealth.pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SIPMortalityHeteWealth.pdf"))
 }
 
 
 
 ####### SIP 2D Plot Wealth Heterogeneity ########
+#dimensions as percentage of page
+w <- .5    #width
+h <- .3  #height
+
 
 # adjustable parameters
 nb2 <- 100      # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
@@ -432,7 +543,8 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
         type = 'scatter',
         mode = 'lines',
         line = list(dash = 'dot', color = colors[i]),
-        name = paste("Max stability age", age2[i])
+        name = paste("Max stability age", age2[i]),
+        showlegend=F
       )
     }
     
@@ -444,7 +556,8 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'gray'),
-      name = paste(nb1+nb2, " Homogeneous from Group 1", sep = "")
+      name = paste(nb1+nb2, " Homo", sep = ""),
+      showlegend=F
     )
     
     p <- add_trace(
@@ -454,28 +567,42 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'black'),
-      name = paste(nb1, " Homogeneous from Group 1", sep = "")
+      name = paste(nb1, " Homo", sep = ""),
+      showlegend=F
     )
     
     # Final layout
     p <- layout(
+      font = list(family = fontType),
       p,
       xaxis = list(title = "Benefit Mutiplier of Group 2",
-                   type = "log"),
-      yaxis = list(title = "Nb of Stable Years"),
-      legend = list(x = 0.8, y = 1),
-      title = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1, " / Nb Groupe 2: ", nb2, sep = "")
+                   type = "log",
+                   titlefont = axisFont
+                   ),
+      yaxis = list(title = "Nb of Stable Years",
+                   titlefont = axisFont
+                   ),
+      legend = list(x = 0, y = 1,font = legendFont),
+      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ",
+                                nb1, "\n / Nb Groupe 2: ", nb2, sep = ""),
+                   font = titleFont
+                   ),
+      margin = list(t = 70, b=70)
     )
-    
-    p
   }
-  
+  save_image(p,paste0(exportPath,"SIPWealthHeteMortality.pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SIPWealthHeteMortality.pdf"))
 }
 
 
 
 
 ####### SIP Homogeneous evolution with nb1 ########
+#dimensions as percentage of page
+w <- 1    #width
+h <- .4  #height
+
 
 # adjustable parameters
 nb1 <- seq(1,5000)     # only possibility
@@ -515,20 +642,31 @@ age1 <- c(60,65,70)   # only 60, 65 and 70 available, can select some are all of
     
     # Final layout
     p <- layout(
+      font = list(family = fontType),
       p,
-      xaxis = list(title = "Nb of pool member"),
-      yaxis = list(title = "SIP"),
-      legend = list(x = 0.8, y = 0),
-      title = paste("Homogeneous Pool")
+      xaxis = list(title = "Nb of pool member",
+                   titlefont = axisFont),
+      yaxis = list(title = "SIP",
+                   titlefont = axisFont),
+      legend = list(x = .9, y = .1,font = legendFont),
+      title = list(text = paste("Homogeneous Pool"),
+                   font = titleFont
+                   ),
+      margin = list(t = 70, b=70)
     )
-    
-    p
   }
+  save_image(p,paste0(exportPath,"homoSIP_Smooth.pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"homoSIP_Smooth.pdf"))
 }
 
 
 
-####### SD Heterogeneous Mortality evolution with nb2 ########
+####### SIP Heterogeneous Mortality evolution with nb2 ########
+#dimensions as percentage of page
+w <- .5    #width
+h <- .3   #height
+
 
 # adjustable parameters
 nb1 = 100
@@ -570,21 +708,32 @@ age2 <- c(55,60,65,70,75)   # only 55, 60, 65, 70 and 75 available
     
     # Final layout
     p <- layout(
+      font = list(family = fontType),
       p,
-      xaxis = list(title = "Nb in group 2"),
-      yaxis = list(title = "one-year SD"),
-      legend = list(x = 0.8, y = 0),
-      title = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1, sep = "")
+      xaxis = list(title = "Nb in group 2",
+                   titlefont = axisFont),
+      yaxis = list(title = "one-year SD",
+                   titlefont = axisFont),
+      legend = list(x = 0, y = 1,font = legendFont),
+      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ",
+                                nb1, sep = ""),
+      font = titleFont
+      ),
+      margin = list(t = 70, b=70)
     )
-    
-    p
   }
-  
+  save_image(p,paste0(exportPath,"SIPMortalityHeteNb.pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SIPMortalityHeteNb.pdf"))
 }
 
 
 
-####### SD Heterogeneous Wealth evolution with nb2 ########
+####### SIP Heterogeneous Wealth evolution with nb2 ########
+#dimensions as percentage of page
+w <- .5    #width
+h <- .3  #height
+
 
 # adjustable parameters
 nb1 = 100
@@ -626,27 +775,166 @@ BMulti <- c(.2,.5,1,2,5) #ratio of benefit2/benefit1
     
     # Final layout
     p <- layout(
+      font = list(family = fontType),
       p,
-      xaxis = list(title = "Nb in group 2"),
-      yaxis = list(title = "one-year SD"),
-      legend = list(x = 0.8, y = 0),
-      title = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1, sep = "")
+      xaxis = list(title = "Nb in group 2",
+                   titlefont = axisFont),
+      yaxis = list(title = "one-year SD",
+                   titlefont = axisFont),
+      legend = list(x = 0, y = 1,font = legendFont),
+      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ",
+                                nb1, sep = ""),
+      font = titleFont
+    ),
+    margin = list(t = 70, b=70)
     )
-    
-    p
   }
-  
+  save_image(p,paste0(exportPath,"SIPWealthHeteNb.pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SIPWealthHeteNb.pdf"))
 }
 
 
+
+
+#########################################
+# Section 5: other figures then results
+#########################################
+####### Empirical Dist of NB of stable years with smoothing######
+#dimensions as percentage of page
+w <- 1    #width
+h <- .4  #height
+
+
+# adjustable parameters
+nb2 <- 50     #can be anything, computed directly in code
+nb1 <- 100     
+nbSimul <- 10000  #can add more but <5 sec to run for 10000 simul
+beta <- .95       #treshhold illustrated in plot
+
+##preparing data
+{
+  age1 <- 65
+  benefit1 <- 1000
+  age2 <- age1
+  asset1 <- as.vector(benefit1 %*% annuity(age1, rate = .02))
+  asset2 <- asset1
+  
+  Stability <- replicate(nbSimul,StabilityCalc2Pop(nb1,
+                                                   nb2,
+                                                   age1,
+                                                   age2,
+                                                   asset1,
+                                                   asset2))
+  
+  cumulDist <- ecdf(Stability)
+  discreteVaR <- min(which(cumulDist(1:30)>(1-beta)))
+  
+  p <- (1-beta)
+  x <- sort(Stability)
+  y <- unique(x)
+  Ly <- length(y)
+  z <- sapply(1:Ly,function(i) sum(y[i]==x))/length(x)
+  zModified <- c(z[1]/2,(z[2:Ly]+z[1:(Ly-1)])/2, z[Ly]/2)
+  cumul <- cumsum(zModified)
+  i <- min(which(cumul>=p))
+  pStar <- (p - (cumul[i] - zModified[i]))/zModified[i]
+  if(i == 1){
+    VaR <- y[1]
+  }else if (i==(Ly+1)) {
+    VaR <- y[Ly]
+  }else{
+    VaR <- (y[i] - y[i-1])*pStar+ y[i-1]
+  }
+  VaR
+  
+  #specific data manipulation for plot
+  {
+    # Suppose cumulDist is an ecdf object
+    x_jumps <- environment(cumulDist)$x   # the sample values
+    y_jumps <- cumulDist(x_jumps)
+    
+    # Construct horizontal segments (x[i], y[i]) to (x[i+1], y[i])
+    x_segments <- c()
+    y_segments <- c()
+    for (i in seq_along(x_jumps)) {
+      if (i < length(x_jumps)) {
+        x_segments <- c(x_segments, x_jumps[i], x_jumps[i+1], NA)
+        y_segments <- c(y_segments, y_jumps[i], y_jumps[i], NA)
+      }
+    }
+  }
+}
+
+{
+  
+  fig <- plot_ly()
+  fig <- fig %>%
+    add_trace(x = x_segments, y = y_segments, type = 'scatter', mode = 'lines',
+              line = list(color = "#010101", shape = "hv"),
+              name = "ECDF")%>%
+    # Add points at the jumps
+    add_trace(x = x_jumps, y = y_jumps,
+              type = 'scatter', mode = 'markers',
+              marker = list(color = "#010101", size = 6),
+              name = "ECDF points") %>%
+    layout(
+      font = list(family = fontType),
+      xaxis = list(title = list(text="n", standoff=5), range = c(4, 14),
+                   titlefont = axisFont
+      ),
+      yaxis = list(title = "P(n)", range = c(0, 0.1),
+                   titlefont = axisFont
+      ),
+      margin = list(t = 30, b=30),
+      showlegend = FALSE
+    )
+  
+  # Continuous greenish line
+  fig <- fig %>%
+    add_trace(x = c(y, 34), y = cumul,
+              type = 'scatter', mode = 'lines',
+              line = list(color = "#BABF33", shape = "linear"),
+              name = "Cumul")
+  
+  # Horizontal dashed line
+  fig <- fig %>%
+    add_trace(x = c(0, max(Stability)), y = c(p, p),
+              type = 'scatter', mode = 'lines',
+              line = list(color = "#010101", dash = "dash"),
+              name = "p line")
+  
+  # Vertical dashed line at VaR
+  fig <- fig %>%
+    add_trace(x = c(VaR, VaR), y = c(0.05, -1),
+              type = 'scatter', mode = 'lines',
+              line = list(color = "#FDCE07", dash = "dash"),
+              name = "VaR")
+  
+  # Vertical dashed line at discreteVaR
+  fig <- fig %>%
+    add_trace(x = c(discreteVaR, discreteVaR),
+              y = c(cumulDist(discreteVaR), -1),
+              type = 'scatter', mode = 'lines',
+              line = list(color = "#77C4D5", dash = "dash"),
+              name = "discreteVaR")
+  
+  
+  save_image(fig,paste0(exportPath,"smoothedVSempericalSIP.pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"smoothedVSempericalSIP.pdf"))
+}
 
 ###############################################################################
 # Plots for Section 4 SD 
 # (Adjustable parameter constraint are only suggestion to match section 5,
 #  any values are possible since data is generated in the script)
 ###############################################################################
-
 ####### SD Contour Plot Group1's Perspective ########
+#dimensions as percentage of page
+w <- 1    #width
+h <- .4  #height
+
 
 # adjustable parameters
 nb2 <- 100      # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
@@ -727,18 +1015,25 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       reversescale = FALSE
     ) %>%
       layout(
+        font = list(family = fontType),
         plot_bgcolor = "lightgrey",   # uniform background color
         paper_bgcolor = "white",  # outside background
-        title = paste("Stability with Size Cohort 2:",nb2,"people"),
+        title = list(text = paste("SD with Size Cohort 2:",nb2,"people"),
+                     font = titleFont
+        ),
         xaxis = list(title = "Age Cohort 2",
                      showgrid = FALSE,
-                     range = c(min(df$age2), max(df$age2))
+                     range = c(min(df$age2), max(df$age2)),
+                     titlefont = axisFont
         ),
         yaxis = list(title = "Benefit: Cohort 2/Cohort 1",
                      type = "log",
                      showgrid = FALSE,
-                     range= log(c(min(df$benefitMultiplier), max(df$benefitMultiplier)),10)
+                     range= log(c(min(df$benefitMultiplier),
+                                  max(df$benefitMultiplier)),10),
+                     titlefont = axisFont
         ),
+        margin = list(t = 50, b=70),
         showlegend = F
       )%>%
       add_trace(
@@ -761,15 +1056,19 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
         name = "No No Region",
         inherit = FALSE
       )
-    
-    p
   }
-  
+  save_image(p,paste0(exportPath,"SDContour1Perspective",nb1,nb2,".pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SDContour1Perspective",nb1,nb2,".pdf"))
 }
 
 
 
 ####### SD Contour Plot Both Groups' Perspective ########
+#dimensions as percentage of page
+w <- 1    #width
+h <- .4  #height
+
 
 # adjustable parameters
 nb2 <- 100       # 50, 100 and 200 available for all
@@ -849,18 +1148,24 @@ age1 <- 65      #only 60, 65 and 70 available
       reversescale = FALSE
     ) %>%
       layout(
+        font = list(family = fontType),
         plot_bgcolor = "lightgrey",   # uniform background color
         paper_bgcolor = "white",  # outside background
-        title = paste("Stability with Size Cohort 2:",nb2,"people"),
+        title = list(text=paste("SD with Size Cohort 2:",nb2,"people"),
+                     font = titleFont),
         xaxis = list(title = "Age Cohort 2",
                      showgrid = FALSE,
-                     range = c(min(df$age2), max(df$age2))
+                     range = c(min(df$age2), max(df$age2)),
+                     titlefont = axisFont
         ),
         yaxis = list(title = "Benefit: Cohort 2/Cohort 1",
                      type = "log",
                      showgrid = FALSE,
-                     range= log(c(min(df$benefitMultiplier), max(df$benefitMultiplier)),10)
+                     range= log(c(min(df$benefitMultiplier),
+                                  max(df$benefitMultiplier)),10),
+                     titlefont = axisFont
         ),
+        margin = list(t = 50, b=70),
         showlegend = F
       )%>%
       add_trace(
@@ -873,13 +1178,19 @@ age1 <- 65      #only 60, 65 and 70 available
         name = "No No Region",
         inherit = FALSE
       )
-    p
   }
+  save_image(p,paste0(exportPath,"SDContour2Perspective",nb1,nb2,".pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SDContour2Perspective",nb1,nb2,".pdf"))
 }
 
 
 
 ####### SD 2D Plot Age Heterogeneity ########
+#dimensions as percentage of page
+w <- .5    #width
+h <- .3  #height
+
 
 # adjustable parameters
 nb2 <- 100      # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
@@ -936,7 +1247,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
         type = 'scatter',
         mode = 'lines',
         line = list(color = colors[i]),
-        name = paste0("2 has ", diffWealth[i], " times benefits of 1")
+        name = paste0("y= ", diffWealth[i])
       )
     }
     
@@ -948,7 +1259,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'gray'),
-      name = paste(nb1+nb2, " Homogeneous from Group 1", sep = "")
+      name = paste(nb1+nb2, " Homogeneous", sep = "")
     )
     
     p <- add_trace(
@@ -958,7 +1269,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'black'),
-      name = paste(nb1, " Homogeneous from Group 1", sep = "")
+      name = paste(nb1, " Homogeneous", sep = "")
     )
     
     # Add vertical line at age2 = some value (if desired)
@@ -975,21 +1286,32 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
     
     # Final layout
     p <- layout(
+      font = list(family = fontType),
       p,
-      xaxis = list(title = "age of Group 2"),
-      yaxis = list(title = "one-year SD", autorange = 'reversed'),
-      legend = list(x = 0.8, y = 1),
-      title = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1, " / Nb Groupe 2: ", nb2, sep = "")
+      xaxis = list(title = "age of Group 2",
+                   titlefont = axisFont),
+      yaxis = list(title = "one-year SD", autorange = 'reversed',
+                   titlefont = axisFont,font = legendFont),
+      legend = list(x = 0, y = 0),
+      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1,
+                    "\n / Nb Groupe 2: ", nb2, sep = ""),
+      font = titleFont
+    ),
+      margin = list(t = 70, b=70)
     )
-    
-    p
   }
-  
+  save_image(p,paste0(exportPath,"SDMortalityHeteWealth.pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SDMortalityHeteWealth.pdf"))
 }
 
 
 
 ####### SD 2D Plot Wealth Heterogeneity ########
+#dimensions as percentage of page
+w <- .5    #width
+h <- .3  #height
+
 
 # adjustable parameters
 nb2 <- 100     # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
@@ -1061,7 +1383,8 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
         type = 'scatter',
         mode = 'lines',
         line = list(dash = 'dot', color = colors[i]),
-        name = paste("Max SD age", age2[i])
+        name = paste("Max SD age", age2[i]),
+        showlegend=F
       )
     }
     
@@ -1073,7 +1396,8 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'gray'),
-      name = paste(nb1+nb2, " Homogeneous from Group 1", sep = "")
+      name = paste(nb1+nb2, " Homogeneous", sep = ""),
+      showlegend=F
     )
     
     p <- add_trace(
@@ -1083,27 +1407,39 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'black'),
-      name = paste(nb1, " Homogeneous from Group 1", sep = "")
+      name = paste(nb1, " Homogeneous", sep = ""),
+      showlegend=F
     )
     
     # Final layout
     p <- layout(
+      font = list(family = fontType),
       p,
       xaxis = list(title = "Benefit Mutiplier of Group 2",
-                   type = "log"),
-      yaxis = list(title = "one-year SD", autorange = 'reversed'),
-      legend = list(x = 0.8, y = 1),
-      title = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1, " / Nb Groupe 2: ", nb2, sep = "")
+                   type = "log",
+                   titlefont = axisFont),
+      yaxis = list(title = "one-year SD", autorange = 'reversed',
+                   titlefont = axisFont),
+      legend = list(x = 0, y = 0,font = legendFont),
+      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1,
+                                "\n / Nb Groupe 2: ", nb2, sep = ""),
+                   font = titleFont
+      ),
+      margin = list(t = 70, b=70)
     )
-    
-    p
   }
-  
+  save_image(p,paste0(exportPath,"SDWealthHeteMortality.pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SDWealthHeteMortality.pdf"))
 }
 
 
 
 ####### SD Homogeneous evolution with nb1 ########
+#dimensions as percentage of page
+w <- 1    #width
+h <- .4  #height
+
 
 # adjustable parameters
 nb1 <- seq(1,200)     # Can't contain 0
@@ -1143,20 +1479,30 @@ age1 <- c(60,65,70)   # only 60, 65 and 70 available in section 5
     
     # Final layout
     p <- layout(
+      font = list(family = fontType),
       p,
-      xaxis = list(title = "Nb of pool member"),
-      yaxis = list(title = "one-year SD", autorange = 'reversed'),
-      legend = list(x = 0.8, y = 0),
-      title = paste("Homogeneous Pool")
+      xaxis = list(title = "Nb of pool member",
+                   titlefont = axisFont),
+      yaxis = list(title = "one-year SD", autorange = 'reversed',
+                   titlefont = axisFont),
+      legend = list(x = .9, y = .1,font = legendFont),
+      title = list(text = paste("Homogeneous Pool"),
+                   font = titleFont
+      ),
+      margin = list(t = 70, b=70)
     )
-    
-    p
   }
-  
+  save_image(p,paste0(exportPath,"homoSD_Smooth.pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"homoSD_Smooth.pdf"))
 }
 
 
 ####### SD Heterogeneous Mortality evolution with nb2 ########
+#dimensions as percentage of page
+w <- .5   #width
+h <- .3  #height
+
 
 # adjustable parameters
 nb1 = 100
@@ -1200,21 +1546,32 @@ age2 <- c(55, 60,65,70,75)   # only 55, 60, 65, 70 and 75 available in section 5
     
     # Final layout
     p <- layout(
+      font = list(family = fontType),
       p,
-      xaxis = list(title = "Nb in group 2"),
-      yaxis = list(title = "one-year SD", autorange = 'reversed'),
-      legend = list(x = 0.8, y = 0),
-      title = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1, sep = "")
+      xaxis = list(title = "Nb in group 2",
+                   titlefont = axisFont),
+      yaxis = list(title = "one-year SD", autorange = 'reversed',
+                   titlefont = axisFont),
+      legend = list(x = 0, y = 1,font = legendFont),
+      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ",
+                            nb1, sep = ""),
+               font = titleFont
+      ),
+      margin = list(t = 70, b=70)
     )
-    
-    p
   }
-  
+  save_image(p,paste0(exportPath,"SDMortalityHeteNb.pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SDMortalityHeteNb.pdf"))
 }
 
 
 
 ####### SD Heterogeneous Wealth evolution with nb2 ########
+#dimensions as percentage of page
+w <- .5    #width
+h <- .3  #height
+
 
 # adjustable parameters
 nb1 = 100
@@ -1258,22 +1615,33 @@ BMulti <- c(.2,.5,1,2,5) #ratio of benefit2/benefit1
     
     # Final layout
     p <- layout(
+      font = list(family = fontType),
       p,
-      xaxis = list(title = "Nb in group 2"),
-      yaxis = list(title = "one-year SD", autorange = 'reversed'),
-      legend = list(x = 0.8, y = 0),
-      title = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1, sep = "")
+      xaxis = list(title = "Nb in group 2",
+                   titlefont = axisFont),
+      yaxis = list(title = "one-year SD", autorange = 'reversed',
+                   titlefont = axisFont),
+      legend = list(x = 0, y = 1,font = legendFont),
+      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ",
+                                nb1, sep = ""),
+                   font = titleFont
+      ),
+      margin = list(t = 70, b=70)
     )
-    
-    p
   }
-  
+  save_image(p,paste0(exportPath,"SDWealthHeteNb.pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SDWealthHeteNb.pdf"))
 }
 
 
 
 
 ####### SD Heterogeneous Wealth evolution with TOTAL participants ########
+#dimensions as percentage of page
+w <- 1    #width
+h <- .4  #height
+
 
 # adjustable parameters
 nb1 = seq(0,100)
@@ -1318,21 +1686,32 @@ nb2 <- rev(nb1)
     
     # Final layout
     p <- layout(
+      font = list(family = fontType),
       p,
-      xaxis = list(title = "Nb in group 1"),
-      yaxis = list(title = "one-year SD", autorange = 'reversed'),
-      legend = list(x = 0.5, y = 0),
-      title = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1, sep = "")
+      xaxis = list(title = "Nb in group 1",
+                   titlefont = axisFont),
+      yaxis = list(title = "one-year SD", autorange = 'reversed',
+                   titlefont = axisFont),
+      legend = list(x = 0.45, y = 0,font = legendFont),
+      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ",
+                                nb1, sep = ""),
+                   font = titleFont
+      ),
+      margin = list(t = 70, b=70)
     )
-    
-    p
   }
-  
+  save_image(p,paste0(exportPath,"SIPMortalityHeteNb.pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SIPMortalityHeteNb.pdf"))
 }
 
 
 
-####### SD 3D Homogeneous Nb People to Age ########
+####### #No Export Yet# SD 3D Homogeneous Nb People to Age ########
+#dimensions as percentage of page
+w <- 1    #width
+h <- .4  #height
+
 
 # adjustable parameters
 age1 <- seq(55,75)
@@ -1360,15 +1739,7 @@ nb2 <- 0 # to stay homogeneous
       z = ~t(riskStability),
       type = "surface",
       showscale=F,
-      colors = winterColormap) %>%
-      layout(
-        title = "Approx Stability of Heterogeneous Pool",
-        scene = list(
-          xaxis = list(title = "age"),
-          yaxis = list(title = "nb1"),
-          zaxis = list(title = "SD"),
-          aspectratio = list(x = 1, y = 2, z = 1))
-      )
+      colors = winterColormap)
     # Add grid lines in x-direction
     for (j in seq(1,length(nb1))) {
       p <- p %>% add_trace(
@@ -1393,14 +1764,38 @@ nb2 <- 0 # to stay homogeneous
         line = list(color = "black", width = 2),
         showlegend = FALSE
       )
+      p <- p %>%
+        layout(
+          font = list(family = fontType),
+          scene = list(
+            xaxis = list(title = "age",
+                         titlefont = axisFont),
+            yaxis = list(title = "nb1",
+                         titlefont = axisFont),
+            zaxis = list(title = "SD",
+                         titlefont = axisFont),
+            aspectratio = list(x = 1, y = 2, z = 1),
+            camera = list(
+              # Position the camera to look at the plot from a new angle
+              eye = list(x = -2.2, y = -1.5, z = .5),
+              # shift image center
+              center = list(x=0,y=0,z=-2))
+          )
+        )
     }
-    p
-  }  
+  }
+  save_image(p,paste0(exportPath,"SD3dMortalityNB1.pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SD3dMortalityNB1.pdf"))
 }
 
 
 
-####### SD 3D Heterogeneous Mortality evolution with nb2 ########
+####### #No Export Yet# SD 3D Heterogeneous Mortality evolution with nb2 ########
+#dimensions as percentage of page
+w <- 1    #width
+h <- .4  #height
+
 
 # adjustable parameters
 nb1 = 100
@@ -1433,6 +1828,7 @@ nb2 <- seq(0,500,25)
       showscale=F,
       colors = winterColormap) %>%
       layout(
+        font = list(family = fontType),
         title = "Approx Stability of Heterogeneous Pool",
         scene = list(
           xaxis = list(title = "age"),
@@ -1480,7 +1876,11 @@ nb2 <- seq(0,500,25)
   }  
 }
 
-####### SD 3D Heterogeneous Wealth evolution with nb2 ########
+####### #No Export Yet# SD 3D Heterogeneous Wealth evolution with nb2 ########
+#dimensions as percentage of page
+w <- 1    #width
+h <- .4  #height
+
 
 # adjustable parameters
 nb1 = 100
@@ -1514,6 +1914,7 @@ nb2 <- seq(0,500,25)
       showscale=F,
       colors = winterColormap) %>%
       layout(
+        font = list(family = fontType),
         title = "Approx Stability of Heterogeneous Pool",
         scene = list(
           xaxis = list(title = "initial benefits y", type = "log"),
@@ -1565,8 +1966,10 @@ nb2 <- seq(0,500,25)
 #########################################
 # Section 4 with implied nb1 scale instead of SD
 #########################################
-
 ####### Implied Nb1 Contour Plot Group1's Perspective ########
+#dimensions as percentage of page
+w <- 1    #width
+h <- .4  #height
 
 # adjustable parameters
 nb2 <- 100      # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
@@ -1658,18 +2061,25 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       reversescale = FALSE
     ) %>%
       layout(
+        font = list(family = fontType),
         plot_bgcolor = "lightgrey",   # uniform background color
         paper_bgcolor = "white",  # outside background
-        title = paste("Stability with Size Cohort 2:",nb2,"people"),
+        title = list(text = paste("Implied SD with Size Cohort 2:",nb2,"people"),
+                     font = titleFont
+        ),
         xaxis = list(title = "Age Cohort 2",
                      showgrid = FALSE,
-                     range = c(min(df$age2), max(df$age2))
+                     range = c(min(df$age2), max(df$age2)),
+                     titlefont = axisFont
         ),
         yaxis = list(title = "Benefit: Cohort 2/Cohort 1",
                      type = "log",
                      showgrid = FALSE,
-                     range= log(c(min(df$benefitMultiplier), max(df$benefitMultiplier)),10)
+                     range= log(c(min(df$benefitMultiplier),
+                                  max(df$benefitMultiplier)),10),
+                     titlefont = axisFont
         ),
+        margin = list(t = 50, b=70),
         showlegend = F
       )%>%
       add_trace(
@@ -1692,15 +2102,18 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
         name = "No No Region",
         inherit = FALSE
       )
-    
-    p
   }
-  
+  save_image(p,paste0(exportPath,"ImpliedSDContour1Perspective",nb1,nb2,".pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"ImpliedSDContour1Perspective",nb1,nb2,".pdf"))
 }
 
 
 
 ####### Implied Nb1 Contour Plot Both Groups' Perspective ########
+#dimensions as percentage of page
+w <- 1    #width
+h <- .4  #height
 
 # adjustable parameters
 nb2 <- 100       # 50, 100 and 200 available for all
@@ -1791,18 +2204,25 @@ age1 <- 65      #only 60, 65 and 70 available
       reversescale = FALSE
     ) %>%
       layout(
+        font = list(family = fontType),
         plot_bgcolor = "lightgrey",   # uniform background color
         paper_bgcolor = "white",  # outside background
-        title = paste("Stability with Size Cohort 2:",nb2,"people"),
+        title = list(text = paste("Implied SD with Size Cohort 2:",nb2,"people"),
+                     font = titleFont
+        ),
         xaxis = list(title = "Age Cohort 2",
                      showgrid = FALSE,
-                     range = c(min(df$age2), max(df$age2))
+                     range = c(min(df$age2), max(df$age2)),
+                     titlefont = axisFont
         ),
         yaxis = list(title = "Benefit: Cohort 2/Cohort 1",
                      type = "log",
                      showgrid = FALSE,
-                     range= log(c(min(df$benefitMultiplier), max(df$benefitMultiplier)),10)
+                     range= log(c(min(df$benefitMultiplier),
+                                  max(df$benefitMultiplier)),10),
+                     titlefont = axisFont
         ),
+        margin = list(t = 50, b=70),
         showlegend = F
       )%>%
       add_trace(
@@ -1815,8 +2235,10 @@ age1 <- 65      #only 60, 65 and 70 available
         name = "No No Region",
         inherit = FALSE
       )
-    p
   }
+  save_image(p,paste0(exportPath,"ImpliedSDContour2Perspective",nb1,nb2,".pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"ImpliedSDContour2Perspective",nb1,nb2,".pdf"))
 }
 
 
