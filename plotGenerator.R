@@ -2,6 +2,7 @@ library(plotly)
 library(reshape2)
 library(RColorBrewer)
 library(reticulate)
+library(ggplot2)
 reticulate::use_python("/opt/anaconda3/bin/python3")
 
 # ####if need to install python
@@ -12,10 +13,10 @@ reticulate::use_python("/opt/anaconda3/bin/python3")
 
 ###### Design and export choice ####
 exportPath <- "/Users/macbook/Library/Mobile\ Documents/com~apple~CloudDocs/School/SFU/Research/Coding/Plots/September26th/"
-fontType <- 'LMRoman10'
-axisFont <- list(size=15, family = fontType)
+fontType <- 'Verdana'
+axisFont <- list(size=20, family = fontType)
 titleFont <- list(size=20, family = fontType)
-legendFont <- list(size=10, family = fontType)
+legendFont <- list(size=15, family = fontType)
 
 pixelsFullWidth <- 1240*(5.5/8) #removing margins
 pixelsFullHeight <- 1754*(9.3/11) #removing margins
@@ -797,6 +798,140 @@ BMulti <- c(.2,.5,1,2,5) #ratio of benefit2/benefit1
 
 
 
+####### SIP Heterogeneous Wealth evolution with TOTAL participants ########
+#dimensions as percentage of page
+w <- 1    #width
+h <- .4  #height
+
+
+# adjustable parameters
+nb1 = seq(0,100)
+BMulti <- c(.1,.2,1,5,10) #ratio of benefit2/benefit1
+
+age = 65
+nb2 <- rev(nb1)
+
+# Generate plot (put it in full screen before saving for better placement of legend)
+{
+  
+  # Import Data
+  {
+    riskStability <- matrix(0, length(BMulti), length(nb2))
+    for (i in seq_along(BMulti)) {
+      name <- paste("simulatedData/ControlledSIP_ParrallelComputingHeteWealth",BMulti[i],"Tot.rds", sep = "")
+      riskStability[i,] <- readRDS(name)
+    }
+  }
+  
+  #plot
+  {
+    colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
+    colors <- rep(colors, length.out = nrow(riskStability))  # ensure enough colors
+    
+    p <- plot_ly() 
+    
+    # Add each column of slices as a separate trace
+    for (i in seq_along(BMulti)) {
+      p <- add_trace(
+        p,
+        x = nb2,
+        y = riskStability[i,],
+        type = 'scatter',
+        mode = 'lines',
+        line = list(color = colors[i]),
+        name = paste0("y:", BMulti[i])
+      )
+    }
+    
+    # Final layout
+    p <- layout(
+      font = list(family = fontType),
+      p,
+      xaxis = list(title = list(text="Number of member in subgroup 2",standoff = 0),
+                   titlefont = axisFont, mirror = TRUE, showline = TRUE,
+                   tickfont = list(size = 15)),
+      yaxis = list(title = list(text="SIP",standoff = 0),
+                   titlefont = axisFont, mirror = TRUE, showline = TRUE,
+                   tickfont = list(size = 15)),
+      legend = list(x = 0.87, y = .02,font = legendFont,
+                    bordercolor = "black", # Set the legend border color
+                    borderwidth = 1,
+                    bgcolor = "rgba(255, 255, 255, 0.5)"),
+      margin = list(t = 30, b=50)
+    )
+  }
+  save_image(p,paste0(exportPath,"SIPWealthHeteTot.pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SIPWealthHeteTot.pdf"))
+}
+####### SD Heterogeneous Mortality evolution with TOTAL participants ########
+#dimensions as percentage of page
+w <- 1    #width
+h <- .4  #height
+
+
+# adjustable parameters
+nb1 = seq(0,100)
+ages <- c(55,60,65,70,75) 
+nb2 <- rev(nb1)
+
+# Generate plot (put it in full screen before saving for better placement of legend)
+{
+  
+  # compute  stability surface
+  # Import Data
+  {
+    riskStability <- matrix(0, length(BMulti), length(nb2))
+    for (i in seq_along(BMulti)) {
+      name <- paste("simulatedData/ControlledSIP_ParrallelComputingHeteMortality",ages[i],"Tot.rds", sep = "")
+      riskStability[i,] <- readRDS(name)
+    }
+  }
+  
+  #plot
+  {
+    colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
+    colors <- rep(colors, length.out = nrow(riskStability))  # ensure enough colors
+    
+    p <- plot_ly() 
+    
+    # Add each column of slices as a separate trace
+    for (i in 1:nrow(riskStability)) {
+      p <- add_trace(
+        p,
+        x = nb2,
+        y = riskStability[i,],
+        type = 'scatter',
+        mode = 'lines',
+        line = list(color = colors[i]),
+        name = paste0("y:", BMulti[i])
+      )
+    }
+    
+    # Final layout
+    p <- layout(
+      font = list(family = fontType),
+      p,
+      xaxis = list(title = list(text="Number of member in subgroup 2",standoff = 0),
+                   titlefont = axisFont, mirror = TRUE, showline = TRUE,
+                   tickfont = list(size = 15)),
+      yaxis = list(title = list(text="SIP",standoff = 0),
+                   titlefont = axisFont, mirror = TRUE, showline = TRUE,
+                   tickfont = list(size = 15)),
+      legend = list(x = 0.02, y = .98,font = legendFont,
+                    bordercolor = "black", # Set the legend border color
+                    borderwidth = 1,
+                    bgcolor = "rgba(255, 255, 255, 0.5)"),
+      margin = list(t = 30, b=50)
+    )
+  }
+  save_image(p,paste0(exportPath,"SDMortalityHeteTot.pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SDMortalityHeteTot.pdf"))
+}
+
+
+
 #########################################
 # Section 5: other figures then results
 #########################################
@@ -1290,7 +1425,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       p,
       xaxis = list(title = "age of Group 2",
                    titlefont = axisFont),
-      yaxis = list(title = "one-year SD", autorange = 'reversed',
+      yaxis = list(title = "one-year SD",
                    titlefont = axisFont,font = legendFont),
       legend = list(x = 0, y = 0),
       title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1,
@@ -1418,7 +1553,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       xaxis = list(title = "Benefit Mutiplier of Group 2",
                    type = "log",
                    titlefont = axisFont),
-      yaxis = list(title = "one-year SD", autorange = 'reversed',
+      yaxis = list(title = "one-year SD",
                    titlefont = axisFont),
       legend = list(x = 0, y = 0,font = legendFont),
       title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1,
@@ -1483,7 +1618,7 @@ age1 <- c(60,65,70)   # only 60, 65 and 70 available in section 5
       p,
       xaxis = list(title = "Nb of pool member",
                    titlefont = axisFont),
-      yaxis = list(title = "one-year SD", autorange = 'reversed',
+      yaxis = list(title = "one-year SD",
                    titlefont = axisFont),
       legend = list(x = .9, y = .1,font = legendFont),
       title = list(text = paste("Homogeneous Pool"),
@@ -1550,7 +1685,7 @@ age2 <- c(55, 60,65,70,75)   # only 55, 60, 65, 70 and 75 available in section 5
       p,
       xaxis = list(title = "Nb in group 2",
                    titlefont = axisFont),
-      yaxis = list(title = "one-year SD", autorange = 'reversed',
+      yaxis = list(title = "one-year SD",
                    titlefont = axisFont),
       legend = list(x = 0, y = 1,font = legendFont),
       title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ",
@@ -1619,7 +1754,7 @@ BMulti <- c(.2,.5,1,2,5) #ratio of benefit2/benefit1
       p,
       xaxis = list(title = "Nb in group 2",
                    titlefont = axisFont),
-      yaxis = list(title = "one-year SD", autorange = 'reversed',
+      yaxis = list(title = "one-year SD",
                    titlefont = axisFont),
       legend = list(x = 0, y = 1,font = legendFont),
       title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ",
@@ -1690,7 +1825,7 @@ nb2 <- rev(nb1)
       p,
       xaxis = list(title = "Nb in group 1",
                    titlefont = axisFont),
-      yaxis = list(title = "one-year SD", autorange = 'reversed',
+      yaxis = list(title = "one-year SD",
                    titlefont = axisFont),
       legend = list(x = 0.45, y = 0,font = legendFont),
       title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ",
@@ -1700,12 +1835,77 @@ nb2 <- rev(nb1)
       margin = list(t = 70, b=70)
     )
   }
-  save_image(p,paste0(exportPath,"SIPMortalityHeteNb.pdf"),
+  save_image(p,paste0(exportPath,"SDWealthHeteTot.pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"SIPMortalityHeteNb.pdf"))
+  browseURL(paste0(exportPath,"SDWealthHeteTot.pdf"))
 }
 
 
+####### SD Heterogeneous Mortality evolution with TOTAL participants ########
+#dimensions as percentage of page
+w <- 1    #width
+h <- .4  #height
+
+
+# adjustable parameters
+nb1 = seq(0,100)
+ages <- c(55,60,65,70,75) 
+nb2 <- rev(nb1)
+
+# Generate plot (put it in full screen before saving for better placement of legend)
+{
+  
+  # compute  stability surface
+  {
+    riskStability <- matrix(0, length(BMulti), length(nb1))
+    for (i in seq_along(nb1)) {
+      riskStability[,i] <- sapply(ages,function(x) SD1Periode(ages[3], 1000, nb1[i],
+                                                              age2 = x,
+                                                              B02 = 1000,
+                                                              nb2 = nb2[i]))
+    }
+  }
+  
+  #plot
+  {
+    colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
+    colors <- rep(colors, length.out = nrow(riskStability))  # ensure enough colors
+    
+    p <- plot_ly() 
+    
+    # Add each column of slices as a separate trace
+    for (i in 1:nrow(riskStability)) {
+      p <- add_trace(
+        p,
+        x = nb2,
+        y = riskStability[i,],
+        type = 'scatter',
+        mode = 'lines',
+        line = list(color = colors[i]),
+        name = paste0("y:", BMulti[i])
+      )
+    }
+    
+    # Final layout
+    p <- layout(
+      font = list(family = fontType),
+      p,
+      xaxis = list(title = "Nb in group 1",
+                   titlefont = axisFont),
+      yaxis = list(title = "one-year SD",
+                   titlefont = axisFont),
+      legend = list(x = 0.45, y = 0,font = legendFont),
+      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ",
+                                nb1, sep = ""),
+                   font = titleFont
+      ),
+      margin = list(t = 70, b=70)
+    )
+  }
+  save_image(p,paste0(exportPath,"SDMortalityHeteTot.pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SDMortalityHeteTot.pdf"))
+}
 
 ####### #No Export Yet# SD 3D Homogeneous Nb People to Age ########
 #dimensions as percentage of page
@@ -1777,16 +1977,18 @@ nb2 <- 0 # to stay homogeneous
             aspectratio = list(x = 1, y = 2, z = 1),
             camera = list(
               # Position the camera to look at the plot from a new angle
-              eye = list(x = -2.2, y = -1.5, z = .5),
+              eye = list(x = -2.2*.85, y = -1.3*.85, z = .5*.85),
               # shift image center
-              center = list(x=0,y=0,z=-2))
-          )
+              center = list(x=0,y=0,z=-.3))
+          ),
+          margin=list(t=0,l=0,b=0,r=0)
         )
     }
+    p
+    save_image(p,paste0(exportPath,"SD3dMortalityNB1.pdf"),
+               width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+    browseURL(paste0(exportPath,"SD3dMortalityNB1.pdf"))
   }
-  save_image(p,paste0(exportPath,"SD3dMortalityNB1.pdf"),
-             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"SD3dMortalityNB1.pdf"))
 }
 
 
