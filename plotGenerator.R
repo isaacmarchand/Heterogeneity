@@ -3,6 +3,8 @@ library(reshape2)
 library(RColorBrewer)
 library(reticulate)
 library(ggplot2)
+library(htmlwidgets)
+library(webshot)
 reticulate::use_python("/opt/anaconda3/bin/python3")
 
 # ####if need to install python
@@ -12,11 +14,11 @@ reticulate::use_python("/opt/anaconda3/bin/python3")
 # py_install(c("kaleido==0.2.1", "plotly"))
 
 ###### Design and export choice ####
-exportPath <- "/Users/macbook/Library/Mobile\ Documents/com~apple~CloudDocs/School/SFU/Research/Coding/Plots/September26th/"
-fontType <- 'Verdana'
-axisFont <- list(size=20, family = fontType)
-titleFont <- list(size=20, family = fontType)
-legendFont <- list(size=15, family = fontType)
+exportPath <- "/Users/macbook/Library/Mobile\ Documents/com~apple~CloudDocs/School/SFU/Research/Coding/Plots/October10th/"
+fontType <- 'Times New Roman' #'Verdana' for report 'Times New Roman' for paper
+axisFont <- list(size=18, family = fontType)
+titleFont <- list(size=30, family = fontType)
+legendFont <- list(size=12, family = fontType)
 
 pixelsFullWidth <- 1240*(5.5/8) #removing margins
 pixelsFullHeight <- 1754*(9.3/11) #removing margins
@@ -124,6 +126,146 @@ pixelsFullHeight <- 1754*(9.3/11) #removing margins
 # Plots for Section 5 SIP
 ###############################################################################
 
+####### SIP Contour Plot Group1's Perspective Risky Asset ########
+#dimensions as percentage of page
+w <- 1    #width
+h <- .4  #height
+
+# adjustable parameters
+nb2 <- 100     # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
+age1 <- 65      # only 60, 65 and 70 available
+
+nb1 <- 100      # Don't recommend to change, but some scenario available at nb1 = (10 and 500)
+
+# Generate plot
+{
+  # import base stability when group 1 is on its own
+  riskSmallHomo <- readRDS(paste0("simulatedData/SIPBase_riskyAsset",
+                                 nb1,".rds"))
+  
+  # import smoothed stability surface
+  diffAge <- ifelse(age1!=65,paste(age1,"_",sep=""),"")
+  name <- paste("simulatedData/controlledSIP_ParrallelComputingRiskyAsset",
+                diffAge,nb1,nb2,".rds", sep = "")
+  riskStability <- readRDS(name)
+  
+  # compute better and worse areas
+  {
+    ## get stability when group 1 and 2 are homogeneous from imported surface
+    benMultiToExtract <- 1
+    age2 <- seq(55, 75, by = .1)
+    benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 100))
+    colMultiplier <- which.min(abs(benefitMultiplier-benMultiToExtract)) 
+    rowAge <- which(age1==age2)
+    homoYoS <- riskStability[rowAge,colMultiplier]
+    
+    ## extract better (green) area
+    dfbetterYoS <- list(YoS = riskStability[riskStability>=homoYoS])
+    dfbetterYoS$age2 <-  matrix(rep(age2, length(benefitMultiplier)),
+                                ncol = length(benefitMultiplier))[riskStability
+                                                                  >=homoYoS]
+    dfbetterYoS$benefitMultiplier <- matrix(rep(benefitMultiplier, length(age2)),
+                                            nrow = length(age2),
+                                            byrow = T)[riskStability>=homoYoS]
+    
+    ## extract worst (red) area
+    dfworsteYoS <- list(YoS = riskStability[riskStability<=riskSmallHomo])
+    dfworsteYoS$age2 <-  matrix(rep(age2, length(benefitMultiplier)),
+                                ncol = length(benefitMultiplier))[riskStability
+                                                                  <=riskSmallHomo]
+    dfworsteYoS$benefitMultiplier <- matrix(rep(benefitMultiplier, length(age2)),
+                                            nrow = length(age2),
+                                            byrow = T)[riskStability<=riskSmallHomo]
+    
+  }
+  
+  # contour Plot
+  {
+    # Prepare data in long format
+    df <- melt(riskStability)
+    colnames(df) <- c("ageIndex", "benefitIndex", "YoS")
+    df$benefitMultiplier <- benefitMultiplier[df$benefitIndex]
+    df$age2 <- age2[df$ageIndex]
+    
+    # Create contour plot
+    p <- plot_ly(
+      data = df,
+      x = ~age2,
+      y = ~benefitMultiplier,
+      z = ~YoS,
+      type = "contour",
+      showscale = FALSE,
+      contours = list(
+        coloring = "lines",  # or "lines", "none"
+        showlabels = TRUE
+      ),
+      line = list(smoothing = 0),
+      colorscale = list(c(0, "black"), c(1, "black")),
+      reversescale = FALSE
+    ) %>%
+      add_trace(
+        data = dfbetterYoS,
+        x = ~age2,
+        y = ~benefitMultiplier,
+        type = "scatter",
+        mode = "markers",
+        marker = list(color = "rgba(144, 238, 144, 0.3)", size = 6, symbol = "circle"),
+        name = "Preferred Region",
+        inherit = FALSE
+      )%>%
+      add_trace(
+        data = dfworsteYoS,
+        x = ~age2,
+        y = ~benefitMultiplier,
+        type = "scatter",
+        mode = "markers",
+        marker = list(color = "rgba(255, 99, 71, 0.2)", size = 6, symbol = "circle"),
+        name = "No No Region",
+        inherit = FALSE
+      )%>%
+      layout(
+        font = list(family = fontType),
+        plot_bgcolor = "lightgrey",   # uniform background color
+        paper_bgcolor = "white",  # outside background
+        xaxis = list(title = list(text = "Age of members in group 2",
+                                  standoff = 5),
+                     showgrid = FALSE,
+                     range = c(min(df$age2), max(df$age2)),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        yaxis = list(title = list(text = "Initial benefit of group 2",
+                                  standoff = 5),
+                     type = "log",
+                     showgrid = FALSE,
+                     range= log(c(min(df$benefitMultiplier),
+                                  max(df$benefitMultiplier)),10),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        margin = list(t = 50, b=40),
+        showlegend = F
+      )
+    p
+  }
+  
+  save_image(p,paste0(exportPath,"SIPContourRiskyAsset",nb1,nb2,".pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SIPContourRiskyAsset",nb1,nb2,".pdf"))
+  
+  # # other export option
+  # saveWidget(p, paste0(exportPath,"SIPContourRiskyAsset.html"), selfcontained = TRUE)
+  # webshot(paste0(exportPath,"SIPContourRiskyAsset.html"),
+  #         file   = paste0(exportPath,"SIPContourRiskyAsset.jpeg"),
+  #         vwidth = 720, vheight = 480,  # canvas size
+  #         zoom   = 3)
+}
 ####### SIP Contour Plot Group1's Perspective ########
 #dimensions as percentage of page
 w <- 1    #width
@@ -201,28 +343,6 @@ nb1 <- 100      # Don't recommend to change, but some scenario available at nb1 
       colorscale = list(c(0, "black"), c(1, "black")),
       reversescale = FALSE
     ) %>%
-      layout(
-        font = list(family = fontType),
-        plot_bgcolor = "lightgrey",   # uniform background color
-        paper_bgcolor = "white",  # outside background
-        title = list(text = paste("Stability with Size Cohort 2:",nb2,"people"),
-                     font = titleFont
-                     ),
-        xaxis = list(title = "Age Cohort 2",
-                     showgrid = FALSE,
-                     range = c(min(df$age2), max(df$age2)),
-                     titlefont = axisFont
-                     ),
-        yaxis = list(title = "Banefit ratio: y",
-                     type = "log",
-                     showgrid = FALSE,
-                     range= log(c(min(df$benefitMultiplier),
-                                  max(df$benefitMultiplier)),10),
-                     titlefont = axisFont
-                     ),
-        margin = list(t = 50, b=70),
-        showlegend = F
-      )%>%
       add_trace(
         data = dfbetterYoS,
         x = ~age2,
@@ -242,7 +362,37 @@ nb1 <- 100      # Don't recommend to change, but some scenario available at nb1 
         marker = list(color = "rgba(255, 99, 71, 0.2)", size = 6, symbol = "circle"),
         name = "No No Region",
         inherit = FALSE
+      ) %>%
+      layout(
+        font = list(family = fontType),
+        plot_bgcolor = "lightgrey",   # uniform background color
+        paper_bgcolor = "white",  # outside background
+        xaxis = list(title = list(text = "Age of members in group 2",
+                                  standoff = 5),
+                     showgrid = FALSE,
+                     range = c(min(df$age2), max(df$age2)),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        yaxis = list(title = list(text = "Initial benefit of group 2",
+                                  standoff = 5),
+                     type = "log",
+                     showgrid = FALSE,
+                     range= log(c(min(df$benefitMultiplier),
+                                  max(df$benefitMultiplier)),10),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        margin = list(t = 50, b=40),
+        showlegend = F
       )
+    p
   }
   
   save_image(p,paste0(exportPath,"SIPContour1Perspective",nb1,nb2,".pdf"),
@@ -254,11 +404,11 @@ nb1 <- 100      # Don't recommend to change, but some scenario available at nb1 
 
 ####### SIP Contour Plot Both Groups' Perspective ########
 #dimensions as percentage of page
-w <- .1    #width
+w <- 1    #width
 h <- .4  #height
 
 # adjustable parameters
-nb2 <- 200       # 50, 100 and 200 available for all
+nb2 <- 100       # 50, 100 and 200 available for all
 age1 <- 65      #only 60, 65 and 70 available
 
 # Generate plot
@@ -322,27 +472,6 @@ age1 <- 65      #only 60, 65 and 70 available
       colorscale = list(c(0, "black"), c(1, "black")),
       reversescale = FALSE
     ) %>%
-      layout(
-        font = list(family = fontType),
-        plot_bgcolor = "lightgrey",   # uniform background color
-        paper_bgcolor = "white",  # outside background
-        title = list(text=paste("Stability with Size Cohort 2:",nb2,"people"),
-        font = titleFont),
-        xaxis = list(title = "Age Cohort 2",
-                     showgrid = FALSE,
-                     range = c(min(df$age2), max(df$age2)),
-                     titlefont = axisFont
-        ),
-        yaxis = list(title = "Benefit: Cohort 2/Cohort 1",
-                     type = "log",
-                     showgrid = FALSE,
-                     range= log(c(min(df$benefitMultiplier),
-                                  max(df$benefitMultiplier)),10),
-                     titlefont = axisFont
-        ),
-        margin = list(t = 50, b=70),
-        showlegend = F
-      )%>%
       add_trace(
         data = dfworsteYoS,
         x = ~age2,
@@ -352,6 +481,35 @@ age1 <- 65      #only 60, 65 and 70 available
         marker = list(color = "rgba(255, 99, 71, 0.2)", size = 6, symbol = "circle"),
         name = "No No Region",
         inherit = FALSE
+      )%>%
+      layout(
+        font = list(family = fontType),
+        plot_bgcolor = "lightgrey",   # uniform background color
+        paper_bgcolor = "white",  # outside background
+        xaxis = list(title = list(text = "Age of members in group 2",
+                                  standoff = 5),
+                     showgrid = FALSE,
+                     range = c(min(df$age2), max(df$age2)),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        yaxis = list(title = list(text = "Initial benefit of group 2",
+                                  standoff = 5),
+                     type = "log",
+                     showgrid = FALSE,
+                     range= log(c(min(df$benefitMultiplier),
+                                  max(df$benefitMultiplier)),10),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        margin = list(t = 50, b=40),
+        showlegend = F
       )
   }
   save_image(p,paste0(exportPath,"SIPContour2Perspective",nb1,nb2,".pdf"),
@@ -361,10 +519,135 @@ age1 <- 65      #only 60, 65 and 70 available
 
 
 
+####### SIP Contour Plot Both Groups' Perspective Risky Asset########
+#dimensions as percentage of page
+w <- 1    #width
+h <- .4  #height
+
+# adjustable parameters
+nb2 <- 100       # 50, 100 and 200 available for all
+age1 <- 65      #only 60, 65 and 70 available
+
+# Generate plot
+{
+  nb1 <- 100      # Don't change
+  
+  # import base stability when group 1 is on its own
+  riskSmallHomo <- readRDS(paste("simulatedData/SIPBase_riskyAsset",
+                                 nb1,".rds", sep = ""))
+  
+  # import smoothed stability surface
+  diffAge <- ifelse(age1!=65,paste(age1,"_",sep=""),"")
+  name <- paste("simulatedData/controlledSIP_ParrallelComputingRiskyAsset",
+                diffAge,nb1,nb2,".rds", sep = "")
+  riskStability <- readRDS(name)
+  
+  # import smoothed stability when group 2 is on its own
+  name <- paste("simulatedData/controlledSIP_ParrallelComputingRiskyAsset",0,
+                nb2,".rds", sep = "")
+  riskStabilitySmallHomo <- readRDS(name)
+  
+  # get worse areas (no better area possible for both at the same time)
+  {
+    age2 <- seq(55, 75, by = .1)
+    benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 100))
+    
+    
+    dfworsteYoS <- list(YoS = riskStability[riskStability<=riskStabilitySmallHomo
+                                            |riskStability<=riskSmallHomo])
+    dfworsteYoS$age2 <-  matrix(rep(age2, length(benefitMultiplier)),
+                                ncol = length(benefitMultiplier))[riskStability<=riskStabilitySmallHomo
+                                                                  |riskStability<=riskSmallHomo]
+    dfworsteYoS$benefitMultiplier <- matrix(rep(benefitMultiplier, length(age2)),
+                                            nrow = length(age2),
+                                            byrow = T)[riskStability<=riskStabilitySmallHomo
+                                                       |riskStability<=riskSmallHomo]
+    
+  }
+  
+  # contour Plot
+  {
+    # Prepare data in long format
+    df <- melt(riskStability)
+    colnames(df) <- c("ageIndex", "benefitIndex", "YoS")
+    df$benefitMultiplier <- benefitMultiplier[df$benefitIndex]
+    df$age2 <- age2[df$ageIndex]
+    
+    # Create contour plot
+    p <- plot_ly(
+      data = df,
+      x = ~age2,
+      y = ~benefitMultiplier,
+      z = ~YoS,
+      type = "contour",
+      showscale = FALSE,
+      contours = list(
+        coloring = "lines",  # or "lines", "none"
+        showlabels = TRUE
+      ),
+      line = list(smoothing = 0),
+      colorscale = list(c(0, "black"), c(1, "black")),
+      reversescale = FALSE
+    ) %>%
+      add_trace(
+        data = dfworsteYoS,
+        x = ~age2,
+        y = ~benefitMultiplier,
+        type = "scatter",
+        mode = "markers",
+        marker = list(color = "rgba(255, 99, 71, 0.2)", size = 6, symbol = "circle"),
+        name = "No No Region",
+        inherit = FALSE
+      )%>%
+      layout(
+        font = list(family = fontType),
+        plot_bgcolor = "lightgrey",   # uniform background color
+        paper_bgcolor = "white",  # outside background
+        xaxis = list(title = list(text = "Age of members in group 2",
+                                  standoff = 5),
+                     showgrid = FALSE,
+                     range = c(min(df$age2), max(df$age2)),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        yaxis = list(title = list(text = "Initial benefit of group 2",
+                                  standoff = 5),
+                     type = "log",
+                     showgrid = FALSE,
+                     range= log(c(min(df$benefitMultiplier),
+                                  max(df$benefitMultiplier)),10),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        margin = list(t = 50, b=40),
+        showlegend = F
+      )
+    p
+  }
+  save_image(p,paste0(exportPath,"SIPContourRiskyAsset2Perspective",nb1,nb2,".pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SIPContourRiskyAsset2Perspective",nb1,nb2,".pdf"))
+  
+  # # other export option
+  # saveWidget(p, paste0(exportPath,"SIPContourRiskyAsset2Perspective.html"), selfcontained = TRUE)
+  # webshot(paste0(exportPath,"SIPContourRiskyAsset2Perspective.html"),
+  #         file   = paste0(exportPath,"SIPContourRiskyAsset2Perspective.jpeg"),
+  #         vwidth = 720, vheight = 480,  # canvas size
+  #         zoom   = 3)
+}
+
+
+
 ####### SIP 2D Plot Age Heterogeneity ########
 #dimensions as percentage of page
-w <- .5    #width
-h <- .3  #height
+w <- 1    #width
+h <- .4  #height
 
 # adjustable parameters
 nb2 <- 100       # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
@@ -415,7 +698,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
         type = 'scatter',
         mode = 'lines',
         line = list(color = colors[i]),
-        name = paste0("y= ", diffWealth[i])
+        name = paste0("<i>y</i> = ", diffWealth[i])
       )
     }
     
@@ -427,7 +710,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'gray'),
-      name = paste(nb1+nb2, " Homogeneous", sep = "")
+      name = paste(nb1+nb2, " members from group 1")
     )
     
     p <- add_trace(
@@ -437,36 +720,35 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'black'),
-      name = paste(nb1, " Homogeneous", sep = "")
+      name = paste(nb1, " members from group 1")
     )
-    
-    # Add vertical line at age2 = some value (if desired)
-    # Example if you want a vertical reference at 65:
-    # p <- add_trace(
-    #   p,
-    #   x = c(65,65),
-    #   y = c(min(slices), max(slices)),
-    #   type = 'scatter',
-    #   mode = 'lines',
-    #   line = list(dash = 'dot', color = 'gray'),
-    #   name = 'Reference Age'
-    # )
-    
     # Final layout
     p <- layout(
-      font = list(family = fontType),
       p,
-      xaxis = list(title = "age of Group 2",
-                   titlefont = axisFont),
-      yaxis = list(title = "Nb of Stable Years",
-                   titlefont = axisFont),
-      legend = list(x = .67, y = 1.05,font = legendFont),
-      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1,
-                                "\n / Nb Groupe 2: ", nb2, sep = ""),
-                   font = titleFont
-      ),
-      margin = list(t = 70, b=70)
+      font = list(family = fontType),
+      xaxis = list(title = list(text = "Number of members in group 2",
+                                standoff = 5),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      yaxis = list(title = list(text = "Stable income period"),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      legend = list(x = 0.98, y = .98,
+                    xanchor = "right",
+                    yanchor = "top",
+                    font = legendFont,
+                    bordercolor = "black", # Set the legend border color
+                    borderwidth = 1,
+                    bgcolor = "rgba(255, 255, 255, 0.9)"),
+      margin = list(t = 30, b=40)
     )
+    p
   }
   save_image(p,paste0(exportPath,"SIPMortalityHeteWealth.pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
@@ -477,14 +759,14 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
 
 ####### SIP 2D Plot Wealth Heterogeneity ########
 #dimensions as percentage of page
-w <- .5    #width
-h <- .3  #height
+w <- 1    #width
+h <- .4  #height
 
 
 # adjustable parameters
 nb2 <- 100      # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
 age1 <- 65      # only 60, 65 and 70 available
-age2 <- c(55, 60,65,70, 75) # Any amount of value from interval [55,75]
+age2 <- c(60,65,70) # Any amount of value from interval [55,75]
 
 nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500)
 
@@ -531,7 +813,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
         type = 'scatter',
         mode = 'lines',
         line = list(color = colors[i]),
-        name = paste0("Age 2:", age2[i])
+        name = paste0("Age ", age2[i])
       )
       
       # Add vertical line at Benefit = some value (if desired)
@@ -540,7 +822,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
         p,
         x = c(benefitMultiplier[which(max(slices[i,])==slices[i,])],
               benefitMultiplier[which(max(slices[i,])==slices[i,])]),
-        y = c(min(slices,riskSmallHomo), max(slices,homoYoS)),
+        y = c(min(slices,riskSmallHomo)-1, max(slices,homoYoS)+1),
         type = 'scatter',
         mode = 'lines',
         line = list(dash = 'dot', color = colors[i]),
@@ -557,8 +839,8 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'gray'),
-      name = paste(nb1+nb2, " Homo", sep = ""),
-      showlegend=F
+      name = paste(nb1+nb2, " members from group 1"),
+      showlegend=T
     )
     
     p <- add_trace(
@@ -568,28 +850,39 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'black'),
-      name = paste(nb1, " Homo", sep = ""),
-      showlegend=F
+      name = paste(nb1, " members from group 1"),
+      showlegend=T
     )
     
     # Final layout
     p <- layout(
-      font = list(family = fontType),
       p,
-      xaxis = list(title = "Benefit Mutiplier of Group 2",
+      font = list(family = fontType),
+      xaxis = list(title = list(text = "Number of members in group 2",
+                                standoff = 5),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),showgrid=FALSE,
+                   ticks    = "outside",
                    type = "log",
-                   titlefont = axisFont
-                   ),
-      yaxis = list(title = "Nb of Stable Years",
-                   titlefont = axisFont
-                   ),
-      legend = list(x = 0, y = 1,font = legendFont),
-      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ",
-                                nb1, "\n / Nb Groupe 2: ", nb2, sep = ""),
-                   font = titleFont
-                   ),
-      margin = list(t = 70, b=70)
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      yaxis = list(title = list(text = "Stable income period"),
+                   titlefont = axisFont,
+                   range = range(slices,riskSmallHomo)*c(.95,1.05),
+                   tickfont = list(size = 12),showgrid=FALSE,
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      legend = list(x = 0.02, y = .98,
+                    xanchor = "left",
+                    yanchor = "top",
+                    font = legendFont,
+                    bordercolor = "black", # Set the legend border color
+                    borderwidth = 1,
+                    bgcolor = "rgba(255, 255, 255, 0.9)"),
+      margin = list(t = 30, b=40)
     )
+    p
   }
   save_image(p,paste0(exportPath,"SIPWealthHeteMortality.pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
@@ -643,18 +936,31 @@ age1 <- c(60,65,70)   # only 60, 65 and 70 available, can select some are all of
     
     # Final layout
     p <- layout(
-      font = list(family = fontType),
       p,
-      xaxis = list(title = "Nb of pool member",
-                   titlefont = axisFont),
-      yaxis = list(title = "SIP",
-                   titlefont = axisFont),
-      legend = list(x = .9, y = .1,font = legendFont),
-      title = list(text = paste("Homogeneous Pool"),
-                   font = titleFont
-                   ),
-      margin = list(t = 70, b=70)
+      font = list(family = fontType),
+      xaxis = list(title = list(text = "Number of members",
+                                standoff = 5),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      yaxis = list(title = list(text = "Stable income period"),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      legend = list(x = 0.98, y = .02,
+                    xanchor = "right",
+                    yanchor = "bottom",
+                    font = legendFont,
+                    bordercolor = "black", # Set the legend border color
+                    borderwidth = 1,
+                    bgcolor = "rgba(255, 255, 255, 0.9)"),
+      margin = list(t = 30, b=40)
     )
+    p
   }
   save_image(p,paste0(exportPath,"homoSIP_Smooth.pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
@@ -665,8 +971,8 @@ age1 <- c(60,65,70)   # only 60, 65 and 70 available, can select some are all of
 
 ####### SIP Heterogeneous Mortality evolution with nb2 ########
 #dimensions as percentage of page
-w <- .5    #width
-h <- .3   #height
+w <- 1    #width
+h <- .4   #height
 
 
 # adjustable parameters
@@ -709,19 +1015,31 @@ age2 <- c(55,60,65,70,75)   # only 55, 60, 65, 70 and 75 available
     
     # Final layout
     p <- layout(
-      font = list(family = fontType),
       p,
-      xaxis = list(title = "Nb in group 2",
-                   titlefont = axisFont),
-      yaxis = list(title = "one-year SD",
-                   titlefont = axisFont),
-      legend = list(x = 0, y = 1,font = legendFont),
-      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ",
-                                nb1, sep = ""),
-      font = titleFont
-      ),
-      margin = list(t = 70, b=70)
+      font = list(family = fontType),
+      xaxis = list(title = list(text = "Number of members in group 2",
+                                standoff = 5),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      yaxis = list(title = list(text = "Stable income period"),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      legend = list(x = 0.02, y = .98,
+                    xanchor = "left",
+                    yanchor = "top",
+                    font = legendFont,
+                    bordercolor = "black", # Set the legend border color
+                    borderwidth = 1,
+                    bgcolor = "rgba(255, 255, 255, 0.9)"),
+      margin = list(t = 30, b=40)
     )
+    p
   }
   save_image(p,paste0(exportPath,"SIPMortalityHeteNb.pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
@@ -732,8 +1050,8 @@ age2 <- c(55,60,65,70,75)   # only 55, 60, 65, 70 and 75 available
 
 ####### SIP Heterogeneous Wealth evolution with nb2 ########
 #dimensions as percentage of page
-w <- .5    #width
-h <- .3  #height
+w <- 1    #width
+h <- .4  #height
 
 
 # adjustable parameters
@@ -770,25 +1088,37 @@ BMulti <- c(.2,.5,1,2,5) #ratio of benefit2/benefit1
         type = 'scatter',
         mode = 'lines',
         line = list(color = colors[i]),
-        name = paste0("y:", BMulti[i])
+        name = paste0("<i>y</i> = ", BMulti[i])
       )
     }
     
     # Final layout
     p <- layout(
-      font = list(family = fontType),
       p,
-      xaxis = list(title = "Nb in group 2",
-                   titlefont = axisFont),
-      yaxis = list(title = "one-year SD",
-                   titlefont = axisFont),
-      legend = list(x = 0, y = 1,font = legendFont),
-      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ",
-                                nb1, sep = ""),
-      font = titleFont
-    ),
-    margin = list(t = 70, b=70)
+      font = list(family = fontType),
+      xaxis = list(title = list(text = "Number of members in group 2",
+                                standoff = 5),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      yaxis = list(title = list(text = "Stable income period"),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      legend = list(x = 0.02, y = .98,
+                    xanchor = "left",
+                    yanchor = "top",
+                    font = legendFont,
+                    bordercolor = "black", # Set the legend border color
+                    borderwidth = 1,
+                    bgcolor = "rgba(255, 255, 255, 0.9)"),
+      margin = list(t = 30, b=40)
     )
+    p
   }
   save_image(p,paste0(exportPath,"SIPWealthHeteNb.pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
@@ -839,32 +1169,50 @@ nb2 <- rev(nb1)
         type = 'scatter',
         mode = 'lines',
         line = list(color = colors[i]),
-        name = paste0("y:", BMulti[i])
+        name = paste0("<i>y</i> = ", BMulti[i])
       )
     }
     
     # Final layout
     p <- layout(
-      font = list(family = fontType),
       p,
-      xaxis = list(title = list(text="Number of member in subgroup 2",standoff = 0),
-                   titlefont = axisFont, mirror = TRUE, showline = TRUE,
-                   tickfont = list(size = 15)),
-      yaxis = list(title = list(text="SIP",standoff = 0),
-                   titlefont = axisFont, mirror = TRUE, showline = TRUE,
-                   tickfont = list(size = 15)),
-      legend = list(x = 0.87, y = .02,font = legendFont,
+      font = list(family = fontType),
+      xaxis = list(title = list(text = "Number of members in group 2",
+                                standoff = 5),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      yaxis = list(title = list(text = "Stable income period"),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      legend = list(x = 0.98, y = .02,
+                    xanchor = "right",
+                    yanchor = "bottom",
+                    font = legendFont,
                     bordercolor = "black", # Set the legend border color
                     borderwidth = 1,
-                    bgcolor = "rgba(255, 255, 255, 0.5)"),
-      margin = list(t = 30, b=50)
+                    bgcolor = "rgba(255, 255, 255, 0.9)"),
+      margin = list(t = 30, b=40)
     )
+    p
   }
   save_image(p,paste0(exportPath,"SIPWealthHeteTot.pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
   browseURL(paste0(exportPath,"SIPWealthHeteTot.pdf"))
+  
+  #other export option
+  # saveWidget(p, paste0(exportPath,"SIPWealthHeteTot.html"), selfcontained = TRUE)
+  # webshot(paste0(exportPath,"SIPWealthHeteTot.html"),
+  #         file   = paste0(exportPath,"SIPWealthHeteTot.jpeg"),
+  #         vwidth = 720, vheight = 480,  # canvas size
+  #         zoom   = 3)
 }
-####### SD Heterogeneous Mortality evolution with TOTAL participants ########
+####### SIP Heterogeneous Mortality evolution with TOTAL participants ########
 #dimensions as percentage of page
 w <- 1    #width
 h <- .4  #height
@@ -904,30 +1252,48 @@ nb2 <- rev(nb1)
         type = 'scatter',
         mode = 'lines',
         line = list(color = colors[i]),
-        name = paste0("y:", BMulti[i])
+        name = paste0("Age ", ages[i])
       )
     }
     
     # Final layout
     p <- layout(
-      font = list(family = fontType),
       p,
-      xaxis = list(title = list(text="Number of member in subgroup 2",standoff = 0),
-                   titlefont = axisFont, mirror = TRUE, showline = TRUE,
-                   tickfont = list(size = 15)),
-      yaxis = list(title = list(text="SIP",standoff = 0),
-                   titlefont = axisFont, mirror = TRUE, showline = TRUE,
-                   tickfont = list(size = 15)),
-      legend = list(x = 0.02, y = .98,font = legendFont,
+      font = list(family = fontType),
+      xaxis = list(title = list(text = "Number of members in group 2",
+                                standoff = 5),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      yaxis = list(title = list(text = "Standard deviation"),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      legend = list(x = 0.02, y = .98,
+                    xanchor = "left",
+                    yanchor = "top",
+                    font = legendFont,
                     bordercolor = "black", # Set the legend border color
                     borderwidth = 1,
-                    bgcolor = "rgba(255, 255, 255, 0.5)"),
-      margin = list(t = 30, b=50)
+                    bgcolor = "rgba(255, 255, 255, 0.9)"),
+      margin = list(t = 30, b=40)
     )
+    p
   }
   save_image(p,paste0(exportPath,"SDMortalityHeteTot.pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
   browseURL(paste0(exportPath,"SDMortalityHeteTot.pdf"))
+  
+  #other export option
+  # saveWidget(p, paste0(exportPath,"SDMortalityHeteTot.html"), selfcontained = TRUE)
+  # webshot(paste0(exportPath,"SDMortalityHeteTot.html"),
+  #         file   = paste0(exportPath,"SDMortalityHeteTot.jpeg"),
+  #         vwidth = 720, vheight = 480,  # canvas size
+  #         zoom   = 3)
 }
 
 
@@ -949,112 +1315,133 @@ beta <- .95       #treshhold illustrated in plot
 
 ##preparing data
 {
-  age1 <- 65
-  benefit1 <- 1000
-  age2 <- age1
-  asset1 <- as.vector(benefit1 %*% annuity(age1, rate = .02))
-  asset2 <- asset1
-  
-  Stability <- replicate(nbSimul,StabilityCalc2Pop(nb1,
-                                                   nb2,
-                                                   age1,
-                                                   age2,
-                                                   asset1,
-                                                   asset2))
-  
-  cumulDist <- ecdf(Stability)
-  discreteVaR <- min(which(cumulDist(1:30)>(1-beta)))
-  
-  p <- (1-beta)
-  x <- sort(Stability)
-  y <- unique(x)
-  Ly <- length(y)
-  z <- sapply(1:Ly,function(i) sum(y[i]==x))/length(x)
-  zModified <- c(z[1]/2,(z[2:Ly]+z[1:(Ly-1)])/2, z[Ly]/2)
-  cumul <- cumsum(zModified)
-  i <- min(which(cumul>=p))
-  pStar <- (p - (cumul[i] - zModified[i]))/zModified[i]
-  if(i == 1){
-    VaR <- y[1]
-  }else if (i==(Ly+1)) {
-    VaR <- y[Ly]
-  }else{
-    VaR <- (y[i] - y[i-1])*pStar+ y[i-1]
-  }
-  VaR
-  
-  #specific data manipulation for plot
+  set.seed(1)
   {
-    # Suppose cumulDist is an ecdf object
-    x_jumps <- environment(cumulDist)$x   # the sample values
-    y_jumps <- cumulDist(x_jumps)
+    age1 <- 65
+    benefit1 <- 1000
+    age2 <- age1
+    asset1 <- as.vector(benefit1 %*% annuity(age1, rate = .02))
+    asset2 <- asset1
     
-    # Construct horizontal segments (x[i], y[i]) to (x[i+1], y[i])
-    x_segments <- c()
-    y_segments <- c()
-    for (i in seq_along(x_jumps)) {
-      if (i < length(x_jumps)) {
-        x_segments <- c(x_segments, x_jumps[i], x_jumps[i+1], NA)
-        y_segments <- c(y_segments, y_jumps[i], y_jumps[i], NA)
+    Stability <- replicate(nbSimul,StabilityCalc2Pop(nb1,
+                                                     nb2,
+                                                     age1,
+                                                     age2,
+                                                     asset1,
+                                                     asset2))
+    
+    cumulDist <- ecdf(Stability)
+    discreteVaR <- min(which(cumulDist(1:30)>(1-beta)))
+    
+    p <- (1-beta)
+    x <- sort(Stability)
+    y <- unique(x)
+    Ly <- length(y)
+    z <- sapply(1:Ly,function(i) sum(y[i]==x))/length(x)
+    zModified <- c(z[1]/2,(z[2:Ly]+z[1:(Ly-1)])/2, z[Ly]/2)
+    cumul <- cumsum(zModified)
+    i <- min(which(cumul>=p))
+    pStar <- (p - (cumul[i] - zModified[i]))/zModified[i]
+    if(i == 1){
+      VaR <- y[1]
+    }else if (i==(Ly+1)) {
+      VaR <- y[Ly]
+    }else{
+      VaR <- (y[i] - y[i-1])*pStar+ y[i-1]
+    }
+    VaR
+    
+    #specific data manipulation for plot
+    {
+      # Suppose cumulDist is an ecdf object
+      x_jumps <- environment(cumulDist)$x   # the sample values
+      y_jumps <- cumulDist(x_jumps)
+      
+      # Construct horizontal segments (x[i], y[i]) to (x[i+1], y[i])
+      x_segments <- c()
+      y_segments <- c()
+      for (i in seq_along(x_jumps)) {
+        if (i < length(x_jumps)) {
+          x_segments <- c(x_segments, x_jumps[i], x_jumps[i+1], NA)
+          y_segments <- c(y_segments, y_jumps[i], y_jumps[i], NA)
+        }
       }
     }
   }
-}
-
-{
   
-  fig <- plot_ly()
-  fig <- fig %>%
-    add_trace(x = x_segments, y = y_segments, type = 'scatter', mode = 'lines',
-              line = list(color = "#010101", shape = "hv"),
-              name = "ECDF")%>%
-    # Add points at the jumps
-    add_trace(x = x_jumps, y = y_jumps,
-              type = 'scatter', mode = 'markers',
-              marker = list(color = "#010101", size = 6),
-              name = "ECDF points") %>%
-    layout(
+  {
+    fig <- plot_ly()
+    fig <- fig %>%
+      add_trace(x = x_segments, y = y_segments, type = 'scatter', mode = 'lines',
+                line = list(color = "#010101", shape = "hv"),
+                name = "ECDF")%>%
+      # Add points at the jumps
+      add_trace(x = x_jumps, y = y_jumps,
+                type = 'scatter', mode = 'markers',
+                marker = list(color = "#010101", size = 6),
+                name = "ECDF points",
+                showlegend = F)
+    
+    # Vertical dashed line at discreteVaR
+    fig <- fig %>%
+      add_trace(x = c(discreteVaR, discreteVaR),
+                y = c(cumulDist(discreteVaR), -1),
+                type = 'scatter', mode = 'lines',
+                line = list(color = "#77C4D5", dash = "dash"),
+                name = "5th percentile ECDF"
+      )
+    
+    # Continuous greenish line
+    fig <- fig %>%
+      add_trace(x = c(y, 34), y = cumul,
+                type = 'scatter', mode = 'lines',
+                line = list(color = "#BABF33", shape = "linear"),
+                name = "Smoothed ECDF")
+    
+    # Horizontal dashed line
+    fig <- fig %>%
+      add_trace(x = c(0, max(Stability)), y = c(p, p),
+                type = 'scatter', mode = 'lines',
+                line = list(color = "#010101", dash = "dash"),
+                name = "5th percentile",
+                showlegend = F)
+    
+    # Vertical dashed line at VaR
+    fig <- fig %>%
+      add_trace(x = c(VaR, VaR), y = c(0.05, -1),
+                type = 'scatter', mode = 'lines',
+                line = list(color = "#FDCE07", dash = "dash"),
+                name = "5th percentile smoothed ECDF"
+                )
+    fig <- layout(
+      fig,
       font = list(family = fontType),
-      xaxis = list(title = list(text="n", standoff=5), range = c(4, 14),
-                   titlefont = axisFont
-      ),
-      yaxis = list(title = "P(n)", range = c(0, 0.1),
-                   titlefont = axisFont
-      ),
-      margin = list(t = 30, b=30),
-      showlegend = FALSE
+      xaxis = list(title = list(text = "Years",
+                                standoff = 5),
+                   range = c(4, 14),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      yaxis = list(title = list(text = "Distribution of the number of years"),
+                   range = c(0, 0.1),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      legend = list(x = 0.02, y = .98,
+                    xanchor = "left",
+                    yanchor = "top",
+                    font = legendFont,
+                    bordercolor = "black", # Set the legend border color
+                    borderwidth = 1,
+                    bgcolor = "rgba(255, 255, 255, 0.9)"),
+      margin = list(t = 30, b=40)
     )
-  
-  # Continuous greenish line
-  fig <- fig %>%
-    add_trace(x = c(y, 34), y = cumul,
-              type = 'scatter', mode = 'lines',
-              line = list(color = "#BABF33", shape = "linear"),
-              name = "Cumul")
-  
-  # Horizontal dashed line
-  fig <- fig %>%
-    add_trace(x = c(0, max(Stability)), y = c(p, p),
-              type = 'scatter', mode = 'lines',
-              line = list(color = "#010101", dash = "dash"),
-              name = "p line")
-  
-  # Vertical dashed line at VaR
-  fig <- fig %>%
-    add_trace(x = c(VaR, VaR), y = c(0.05, -1),
-              type = 'scatter', mode = 'lines',
-              line = list(color = "#FDCE07", dash = "dash"),
-              name = "VaR")
-  
-  # Vertical dashed line at discreteVaR
-  fig <- fig %>%
-    add_trace(x = c(discreteVaR, discreteVaR),
-              y = c(cumulDist(discreteVaR), -1),
-              type = 'scatter', mode = 'lines',
-              line = list(color = "#77C4D5", dash = "dash"),
-              name = "discreteVaR")
-  
-  
+    fig
+  } 
   save_image(fig,paste0(exportPath,"smoothedVSempericalSIP.pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
   browseURL(paste0(exportPath,"smoothedVSempericalSIP.pdf"))
@@ -1148,29 +1535,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       line = list(smoothing = 0),
       colorscale = list(c(0, "black"), c(1, "black")),
       reversescale = FALSE
-    ) %>%
-      layout(
-        font = list(family = fontType),
-        plot_bgcolor = "lightgrey",   # uniform background color
-        paper_bgcolor = "white",  # outside background
-        title = list(text = paste("SD with Size Cohort 2:",nb2,"people"),
-                     font = titleFont
-        ),
-        xaxis = list(title = "Age Cohort 2",
-                     showgrid = FALSE,
-                     range = c(min(df$age2), max(df$age2)),
-                     titlefont = axisFont
-        ),
-        yaxis = list(title = "Benefit: Cohort 2/Cohort 1",
-                     type = "log",
-                     showgrid = FALSE,
-                     range= log(c(min(df$benefitMultiplier),
-                                  max(df$benefitMultiplier)),10),
-                     titlefont = axisFont
-        ),
-        margin = list(t = 50, b=70),
-        showlegend = F
-      )%>%
+    )%>%
       add_trace(
         data = dfbetterSD,
         x = ~age2,
@@ -1190,7 +1555,37 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
         marker = list(color = "rgba(255, 99, 71, 0.2)", size = 6, symbol = "circle"),
         name = "No No Region",
         inherit = FALSE
+      ) %>%
+      layout(
+        font = list(family = fontType),
+        plot_bgcolor = "lightgrey",   # uniform background color
+        paper_bgcolor = "white",  # outside background
+        xaxis = list(title = list(text = "Age of members in group 2",
+                              standoff = 5),
+                     showgrid = FALSE,
+                     range = c(min(df$age2), max(df$age2)),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        yaxis = list(title = list(text = "Initial benefit of group 2",
+                                  standoff = 5),
+                     type = "log",
+                     showgrid = FALSE,
+                     range= log(c(min(df$benefitMultiplier),
+                                  max(df$benefitMultiplier)),10),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        margin = list(t = 50, b=40),
+        showlegend = F
       )
+    p
   }
   save_image(p,paste0(exportPath,"SDContour1Perspective",nb1,nb2,".pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
@@ -1235,12 +1630,10 @@ age1 <- 65      #only 60, 65 and 70 available
   {
     riskStabilitySmallHomo <- matrix(0, length(age2), length(benefitMultiplier))
     for (i in seq_along(age2)) {
-      riskStabilitySmallHomo[i,] <- sapply(benefitMultiplier,function(x)SD1Periode(age1,
-                                                                                   1000,
-                                                                                   0,
-                                                                                   age2[i],
-                                                                                   1000*x,
-                                                                                   nb2))
+      riskStabilitySmallHomo[i,] <- sapply(benefitMultiplier,
+                                           function(x)SD1Periode(age1,1000,0,
+                                                                 age2[i],1000*x,
+                                                                 nb2))
     }
   }
   
@@ -1281,28 +1674,7 @@ age1 <- 65      #only 60, 65 and 70 available
       line = list(smoothing = 0),
       colorscale = list(c(0, "black"), c(1, "black")),
       reversescale = FALSE
-    ) %>%
-      layout(
-        font = list(family = fontType),
-        plot_bgcolor = "lightgrey",   # uniform background color
-        paper_bgcolor = "white",  # outside background
-        title = list(text=paste("SD with Size Cohort 2:",nb2,"people"),
-                     font = titleFont),
-        xaxis = list(title = "Age Cohort 2",
-                     showgrid = FALSE,
-                     range = c(min(df$age2), max(df$age2)),
-                     titlefont = axisFont
-        ),
-        yaxis = list(title = "Benefit: Cohort 2/Cohort 1",
-                     type = "log",
-                     showgrid = FALSE,
-                     range= log(c(min(df$benefitMultiplier),
-                                  max(df$benefitMultiplier)),10),
-                     titlefont = axisFont
-        ),
-        margin = list(t = 50, b=70),
-        showlegend = F
-      )%>%
+    )%>%
       add_trace(
         data = dfworsteSD,
         x = ~age2,
@@ -1312,7 +1684,37 @@ age1 <- 65      #only 60, 65 and 70 available
         marker = list(color = "rgba(255, 99, 71, 0.2)", size = 6, symbol = "circle"),
         name = "No No Region",
         inherit = FALSE
+      ) %>%
+      layout(
+        font = list(family = fontType),
+        plot_bgcolor = "lightgrey",   # uniform background color
+        paper_bgcolor = "white",  # outside background
+        xaxis = list(title = list(text = "Age of members in group 2",
+                                  standoff = 5),
+                     showgrid = FALSE,
+                     range = c(min(df$age2), max(df$age2)),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        yaxis = list(title = list(text = "Initial benefit of group 2",
+                                  standoff = 5),
+                     type = "log",
+                     showgrid = FALSE,
+                     range= log(c(min(df$benefitMultiplier),
+                                  max(df$benefitMultiplier)),10),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        margin = list(t = 50, b=40),
+        showlegend = F
       )
+    p
   }
   save_image(p,paste0(exportPath,"SDContour2Perspective",nb1,nb2,".pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
@@ -1323,8 +1725,8 @@ age1 <- 65      #only 60, 65 and 70 available
 
 ####### SD 2D Plot Age Heterogeneity ########
 #dimensions as percentage of page
-w <- .5    #width
-h <- .3  #height
+w <- 1    #width
+h <- .4  #height
 
 
 # adjustable parameters
@@ -1382,7 +1784,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
         type = 'scatter',
         mode = 'lines',
         line = list(color = colors[i]),
-        name = paste0("y= ", diffWealth[i])
+        name = paste0("<i>y</i> = ", diffWealth[i])
       )
     }
     
@@ -1394,7 +1796,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'gray'),
-      name = paste(nb1+nb2, " Homogeneous", sep = "")
+      name = paste0(nb1+nb2, " members from group 1")
     )
     
     p <- add_trace(
@@ -1404,36 +1806,36 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'black'),
-      name = paste(nb1, " Homogeneous", sep = "")
+      name = paste0(nb1, " members from group 1")
     )
-    
-    # Add vertical line at age2 = some value (if desired)
-    # Example if you want a vertical reference at 65:
-    # p <- add_trace(
-    #   p,
-    #   x = c(65,65),
-    #   y = c(min(slices), max(slices)),
-    #   type = 'scatter',
-    #   mode = 'lines',
-    #   line = list(dash = 'dot', color = 'gray'),
-    #   name = 'Reference Age'
-    # )
     
     # Final layout
     p <- layout(
-      font = list(family = fontType),
       p,
-      xaxis = list(title = "age of Group 2",
-                   titlefont = axisFont),
-      yaxis = list(title = "one-year SD",
-                   titlefont = axisFont,font = legendFont),
-      legend = list(x = 0, y = 0),
-      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1,
-                    "\n / Nb Groupe 2: ", nb2, sep = ""),
-      font = titleFont
-    ),
-      margin = list(t = 70, b=70)
+      font = list(family = fontType),
+      xaxis = list(title = list(text = "Number of members in group 2",
+                                standoff = 5),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      yaxis = list(title = list(text = "Standard deviation"),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      legend = list(x = 0.02, y = .98,
+                    xanchor = "left",
+                    yanchor = "top",
+                    font = legendFont,
+                    bordercolor = "black", # Set the legend border color
+                    borderwidth = 1,
+                    bgcolor = "rgba(255, 255, 255, 0.9)"),
+      margin = list(t = 30, b=40)
     )
+    p
   }
   save_image(p,paste0(exportPath,"SDMortalityHeteWealth.pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
@@ -1444,8 +1846,8 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
 
 ####### SD 2D Plot Wealth Heterogeneity ########
 #dimensions as percentage of page
-w <- .5    #width
-h <- .3  #height
+w <- 1    #width
+h <- .4  #height
 
 
 # adjustable parameters
@@ -1505,7 +1907,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
         type = 'scatter',
         mode = 'lines',
         line = list(color = colors[i]),
-        name = paste0("Age 2:", age2[i])
+        name = paste0("Age ", age2[i])
       )
       
       # Add vertical line at Benefit = some value (if desired)
@@ -1514,7 +1916,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
         p,
         x = c(benefitMultiplier[which(min(slices[i,])==slices[i,])],
               benefitMultiplier[which(min(slices[i,])==slices[i,])]),
-        y = c(min(slices,riskSmallHomo), max(slices,homoSD)),
+        y = c(min(slices,riskSmallHomo)-1, max(slices,homoSD)+1),
         type = 'scatter',
         mode = 'lines',
         line = list(dash = 'dot', color = colors[i]),
@@ -1531,8 +1933,8 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'gray'),
-      name = paste(nb1+nb2, " Homogeneous", sep = ""),
-      showlegend=F
+      name = paste0(nb1+nb2, " members from group 1"),
+      showlegend=T
     )
     
     p <- add_trace(
@@ -1542,26 +1944,39 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'black'),
-      name = paste(nb1, " Homogeneous", sep = ""),
-      showlegend=F
+      name = paste0(nb1, " members from group 1"),
+      showlegend=T
     )
     
     # Final layout
     p <- layout(
-      font = list(family = fontType),
       p,
-      xaxis = list(title = "Benefit Mutiplier of Group 2",
+      font = list(family = fontType),
+      xaxis = list(title = list(text = "Number of members in group 2",
+                                standoff = 5),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),showgrid=FALSE,
+                   ticks    = "outside",
                    type = "log",
-                   titlefont = axisFont),
-      yaxis = list(title = "one-year SD",
-                   titlefont = axisFont),
-      legend = list(x = 0, y = 0,font = legendFont),
-      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ", nb1,
-                                "\n / Nb Groupe 2: ", nb2, sep = ""),
-                   font = titleFont
-      ),
-      margin = list(t = 70, b=70)
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      yaxis = list(title = list(text = "Standard deviation"),
+                   titlefont = axisFont,
+                   range = range(slices,riskSmallHomo)*c(.95,1.05),
+                   tickfont = list(size = 12),showgrid=FALSE,
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      legend = list(x = 0.02, y = .98,
+                    xanchor = "left",
+                    yanchor = "top",
+                    font = legendFont,
+                    bordercolor = "black", # Set the legend border color
+                    borderwidth = 1,
+                    bgcolor = "rgba(255, 255, 255, 0.9)"),
+      margin = list(t = 30, b=40)
     )
+    p
   }
   save_image(p,paste0(exportPath,"SDWealthHeteMortality.pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
@@ -1608,24 +2023,38 @@ age1 <- c(60,65,70)   # only 60, 65 and 70 available in section 5
         type = 'scatter',
         mode = 'lines',
         line = list(color = colors[i]),
-        name = paste0("Age:", age1[i])
+        name = paste0("Age ", age1[i])
       )
     }
     
     # Final layout
     p <- layout(
-      font = list(family = fontType),
       p,
-      xaxis = list(title = "Nb of pool member",
-                   titlefont = axisFont),
-      yaxis = list(title = "one-year SD",
-                   titlefont = axisFont),
-      legend = list(x = .9, y = .1,font = legendFont),
-      title = list(text = paste("Homogeneous Pool"),
-                   font = titleFont
-      ),
-      margin = list(t = 70, b=70)
+      font = list(family = fontType),
+      xaxis = list(title = list(text = "Number of members",
+                                standoff = 5),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   nticks = 4,
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      yaxis = list(title = list(text = "Standard deviation"),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      legend = list(x = 0.98, y = .98,
+                    xanchor = "right",
+                    yanchor = "top",
+                    font = legendFont,
+                    bordercolor = "black", # Set the legend border color
+                    borderwidth = 1,
+                    bgcolor = "rgba(255, 255, 255, 0.9)"),
+      margin = list(t = 30, b=40)
     )
+    p
   }
   save_image(p,paste0(exportPath,"homoSD_Smooth.pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
@@ -1635,14 +2064,14 @@ age1 <- c(60,65,70)   # only 60, 65 and 70 available in section 5
 
 ####### SD Heterogeneous Mortality evolution with nb2 ########
 #dimensions as percentage of page
-w <- .5   #width
-h <- .3  #height
+w <- 1   #width
+h <- .4  #height
 
 
 # adjustable parameters
 nb1 = 100
 age1 = 65
-nb2 <- seq(0,200)     
+nb2 <- seq(0,500)     
 age2 <- c(55, 60,65,70,75)   # only 55, 60, 65, 70 and 75 available in section 5
 
 # Generate plot (put it in full screen before saving for better placement of legend)
@@ -1675,25 +2104,37 @@ age2 <- c(55, 60,65,70,75)   # only 55, 60, 65, 70 and 75 available in section 5
         type = 'scatter',
         mode = 'lines',
         line = list(color = colors[i]),
-        name = paste0("Age:", age2[i])
+        name = paste0("Age ", age2[i])
       )
     }
     
     # Final layout
     p <- layout(
-      font = list(family = fontType),
       p,
-      xaxis = list(title = "Nb in group 2",
-                   titlefont = axisFont),
-      yaxis = list(title = "one-year SD",
-                   titlefont = axisFont),
-      legend = list(x = 0, y = 1,font = legendFont),
-      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ",
-                            nb1, sep = ""),
-               font = titleFont
-      ),
-      margin = list(t = 70, b=70)
+      font = list(family = fontType),
+      xaxis = list(title = list(text = "Number of members in group 2",
+                                standoff = 5),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      yaxis = list(title = list(text = "Standard deviation"),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      legend = list(x = 0.98, y = .98,
+                    xanchor = "right",
+                    yanchor = "top",
+                    font = legendFont,
+                    bordercolor = "black", # Set the legend border color
+                    borderwidth = 1,
+                    bgcolor = "rgba(255, 255, 255, 0.9)"),
+      margin = list(t = 30, b=40)
     )
+    p
   }
   save_image(p,paste0(exportPath,"SDMortalityHeteNb.pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
@@ -1704,14 +2145,14 @@ age2 <- c(55, 60,65,70,75)   # only 55, 60, 65, 70 and 75 available in section 5
 
 ####### SD Heterogeneous Wealth evolution with nb2 ########
 #dimensions as percentage of page
-w <- .5    #width
-h <- .3  #height
+w <- 1    #width
+h <- .4  #height
 
 
 # adjustable parameters
 nb1 = 100
 age1 = 65
-nb2 <- seq(0,200)     
+nb2 <- seq(0,500)     
 BMulti <- c(.2,.5,1,2,5) #ratio of benefit2/benefit1
 
 # Generate plot (put it in full screen before saving for better placement of legend)
@@ -1744,25 +2185,37 @@ BMulti <- c(.2,.5,1,2,5) #ratio of benefit2/benefit1
         type = 'scatter',
         mode = 'lines',
         line = list(color = colors[i]),
-        name = paste0("y:", BMulti[i])
+        name = paste0("<i>y</i> = ", BMulti[i])
       )
     }
     
     # Final layout
     p <- layout(
-      font = list(family = fontType),
       p,
-      xaxis = list(title = "Nb in group 2",
-                   titlefont = axisFont),
-      yaxis = list(title = "one-year SD",
-                   titlefont = axisFont),
-      legend = list(x = 0, y = 1,font = legendFont),
-      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ",
-                                nb1, sep = ""),
-                   font = titleFont
-      ),
-      margin = list(t = 70, b=70)
+      font = list(family = fontType),
+      xaxis = list(title = list(text = "Number of members in group 2",
+                                standoff = 5),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      yaxis = list(title = list(text = "Standard deviation"),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      legend = list(x = 0.98, y = .98,
+                    xanchor = "right",
+                    yanchor = "top",
+                    font = legendFont,
+                    bordercolor = "black", # Set the legend border color
+                    borderwidth = 1,
+                    bgcolor = "rgba(255, 255, 255, 0.9)"),
+      margin = list(t = 30, b=40)
     )
+    p
   }
   save_image(p,paste0(exportPath,"SDWealthHeteNb.pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
@@ -1780,7 +2233,7 @@ h <- .4  #height
 
 # adjustable parameters
 nb1 = seq(0,100)
-BMulti <- c(.1,.2,1,5,10) #ratio of benefit2/benefit1
+BMulti <- c(.2,.5,1,2,5) #ratio of benefit2/benefit1
 
 age = 65
 nb2 <- rev(nb1)
@@ -1815,25 +2268,37 @@ nb2 <- rev(nb1)
         type = 'scatter',
         mode = 'lines',
         line = list(color = colors[i]),
-        name = paste0("y:", BMulti[i])
+        name = paste0("<i>y</i> = ", BMulti[i])
       )
     }
     
     # Final layout
     p <- layout(
-      font = list(family = fontType),
       p,
-      xaxis = list(title = "Nb in group 1",
-                   titlefont = axisFont),
-      yaxis = list(title = "one-year SD",
-                   titlefont = axisFont),
-      legend = list(x = 0.45, y = 0,font = legendFont),
-      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ",
-                                nb1, sep = ""),
-                   font = titleFont
-      ),
-      margin = list(t = 70, b=70)
+      font = list(family = fontType),
+      xaxis = list(title = list(text = "Number of members in group 2",
+                                standoff = 5),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      yaxis = list(title = list(text = "Standard deviation"),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      legend = list(x = 0.98, y = .98,
+                    xanchor = "right",
+                    yanchor = "top",
+                    font = legendFont,
+                    bordercolor = "black", # Set the legend border color
+                    borderwidth = 1,
+                    bgcolor = "rgba(255, 255, 255, 0.9)"),
+      margin = list(t = 30, b=40)
     )
+    p
   }
   save_image(p,paste0(exportPath,"SDWealthHeteTot.pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
@@ -1882,39 +2347,51 @@ nb2 <- rev(nb1)
         type = 'scatter',
         mode = 'lines',
         line = list(color = colors[i]),
-        name = paste0("y:", BMulti[i])
+        name = paste0("Age ", ages[i])
       )
     }
     
     # Final layout
     p <- layout(
-      font = list(family = fontType),
       p,
-      xaxis = list(title = "Nb in group 1",
-                   titlefont = axisFont),
-      yaxis = list(title = "one-year SD",
-                   titlefont = axisFont),
-      legend = list(x = 0.45, y = 0,font = legendFont),
-      title = list(text = paste("Age Groupe 1: ", age1, " / Nb Groupe 1: ",
-                                nb1, sep = ""),
-                   font = titleFont
-      ),
-      margin = list(t = 70, b=70)
+      font = list(family = fontType),
+      xaxis = list(title = list(text = "Number of members in group 2",
+                                standoff = 5),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      yaxis = list(title = list(text = "Standard deviation"),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      legend = list(x = 0.02, y = .98,
+                    xanchor = "left",
+                    yanchor = "top",
+                    font = legendFont,
+                    bordercolor = "black", # Set the legend border color
+                    borderwidth = 1,
+                    bgcolor = "rgba(255, 255, 255, 0.9)"),
+      margin = list(t = 30, b=40)
     )
+    p
   }
   save_image(p,paste0(exportPath,"SDMortalityHeteTot.pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
   browseURL(paste0(exportPath,"SDMortalityHeteTot.pdf"))
 }
 
-####### #No Export Yet# SD 3D Homogeneous Nb People to Age ########
+####### SD 3D Homogeneous Nb People to Age ########
 #dimensions as percentage of page
 w <- 1    #width
 h <- .4  #height
 
 
 # adjustable parameters
-age1 <- seq(55,75)
+age1 <- seq(55,85)
 nb1 <- seq(100,500,25) 
 
 nb2 <- 0 # to stay homogeneous
@@ -1964,36 +2441,51 @@ nb2 <- 0 # to stay homogeneous
         line = list(color = "black", width = 2),
         showlegend = FALSE
       )
-      p <- p %>%
-        layout(
-          font = list(family = fontType),
-          scene = list(
-            xaxis = list(title = "age",
-                         titlefont = axisFont),
-            yaxis = list(title = "nb1",
-                         titlefont = axisFont),
-            zaxis = list(title = "SD",
-                         titlefont = axisFont),
-            aspectratio = list(x = 1, y = 2, z = 1),
-            camera = list(
-              # Position the camera to look at the plot from a new angle
-              eye = list(x = -2.2*.85, y = -1.3*.85, z = .5*.85),
-              # shift image center
-              center = list(x=0,y=0,z=-.3))
-          ),
-          margin=list(t=0,l=0,b=0,r=0)
-        )
     }
+    p <- p %>%
+      layout(
+        font = list(family = fontType),
+        scene = list(
+          xaxis = list(title = "Age",
+                       titlefont = axisFont,
+                       titlefont = axisFont,
+                       tickfont = list(size = 12),
+                       ticks    = "outside",
+                       ticklen  = 8,
+                       showline = TRUE, mirror = TRUE, zeroline = FALSE),
+          yaxis = list(title = "Number of members",
+                       titlefont = axisFont,
+                       titlefont = axisFont,
+                       tickfont = list(size = 12),
+                       ticks    = "outside",
+                       ticklen  = 8,
+                       showline = TRUE, mirror = TRUE, zeroline = FALSE),
+          zaxis = list(title = "Standard deviation",
+                       titlefont = axisFont,
+                       titlefont = axisFont,
+                       tickfont = list(size = 12),
+                       ticks    = "outside",
+                       ticklen  = 8,
+                       showline = TRUE, mirror = TRUE, zeroline = FALSE),
+          aspectratio = list(x = 1, y = 2, z = 1),
+          camera = list(
+            # Position the camera to look at the plot from a new angle
+            eye = list(x = -2.2*.9, y = 1*.9, z = .7*.9),
+            # shift image center
+            center = list(x=1*.05,y=1.9*.03,z=-.25))
+        ),
+        margin=list(t=0,l=0,b=0,r=0)
+      )
     p
-    save_image(p,paste0(exportPath,"SD3dMortalityNB1.pdf"),
-               width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-    browseURL(paste0(exportPath,"SD3dMortalityNB1.pdf"))
   }
+  save_image(p,paste0(exportPath,"SD3dMortalityNB1.pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SD3dMortalityNB1.pdf"))
 }
 
 
 
-####### #No Export Yet# SD 3D Heterogeneous Mortality evolution with nb2 ########
+####### SD 3D Heterogeneous Mortality evolution with nb2 ########
 #dimensions as percentage of page
 w <- 1    #width
 h <- .4  #height
@@ -2002,8 +2494,8 @@ h <- .4  #height
 # adjustable parameters
 nb1 = 100
 age1 = 65
-age2 <- seq(55,80)
-nb2 <- seq(0,500,25) 
+age2 <- seq(55,85)
+nb2 <- seq(0,500,1) 
 
 # Generate plot
 {
@@ -2028,18 +2520,9 @@ nb2 <- seq(0,500,25)
       z = ~t(riskStability),
       type = "surface",
       showscale=F,
-      colors = winterColormap) %>%
-      layout(
-        font = list(family = fontType),
-        title = "Approx Stability of Heterogeneous Pool",
-        scene = list(
-          xaxis = list(title = "age"),
-          yaxis = list(title = "nb2"),
-          zaxis = list(title = "SD"),
-          aspectratio = list(x = 1, y = 2, z = 1))
-      )
+      colors = winterColormap)
     # Add grid lines in x-direction
-    for (j in seq(1,length(nb2))) {
+    for (j in seq(1,length(nb2), by= 20)) {
       p <- p %>% add_trace(
         x = age2,
         y = rep(nb2[j], length(age2)),
@@ -2074,11 +2557,48 @@ nb2 <- seq(0,500,25)
       line = list(color = "black", width = 10),
       showlegend = FALSE
     )
+    p <- p %>%
+      layout(
+        font = list(family = fontType),
+        scene = list(
+          xaxis = list(title = "Age",
+                       titlefont = axisFont,
+                       titlefont = axisFont,
+                       tickfont = list(size = 12),
+                       ticks    = "outside",
+                       ticklen  = 8,
+                       showline = TRUE, mirror = TRUE, zeroline = FALSE),
+          yaxis = list(title = "Number of members in group 2",
+                       titlefont = axisFont,
+                       titlefont = axisFont,
+                       tickfont = list(size = 12),
+                       ticks    = "outside",
+                       ticklen  = 8,
+                       showline = TRUE, mirror = TRUE, zeroline = FALSE),
+          zaxis = list(title = "Standard deviation",
+                       titlefont = axisFont,
+                       titlefont = axisFont,
+                       tickfont = list(size = 12),
+                       ticks    = "outside",
+                       ticklen  = 8,
+                       showline = TRUE, mirror = TRUE, zeroline = FALSE),
+          aspectratio = list(x = 1, y = 2, z = 1),
+          camera = list(
+            # Position the camera to look at the plot from a new angle
+            eye = list(x = -2.2*.9, y = 1*.9, z = .7*.9),
+            # shift image center
+            center = list(x=1*.05,y=1.9*.03,z=-.25))
+        ),
+        margin=list(t=0,l=0,b=0,r=0)
+      )
     p
   }  
+  save_image(p,paste0(exportPath,"SD3dMortalityNB2.pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SD3dMortalityNB2.pdf"))
 }
 
-####### #No Export Yet# SD 3D Heterogeneous Wealth evolution with nb2 ########
+####### SD 3D Heterogeneous Wealth evolution with nb2 ########
 #dimensions as percentage of page
 w <- 1    #width
 h <- .4  #height
@@ -2089,7 +2609,7 @@ nb1 = 100
 age1 = 65
 age2 <- 65
 y <- exp(seq(log(1/10),log(10), length.out = 21))
-nb2 <- seq(0,500,25) 
+nb2 <- seq(0,500,1) 
 
 # Generate plot
 {
@@ -2114,18 +2634,9 @@ nb2 <- seq(0,500,25)
       z = ~t(riskStability),
       type = "surface",
       showscale=F,
-      colors = winterColormap) %>%
-      layout(
-        font = list(family = fontType),
-        title = "Approx Stability of Heterogeneous Pool",
-        scene = list(
-          xaxis = list(title = "initial benefits y", type = "log"),
-          yaxis = list(title = "nb2"),
-          zaxis = list(title = "SD"),
-          aspectratio = list(x = 1, y = 2, z = 1))
-      )
+      colors = winterColormap)
     # Add grid lines in x-direction
-    for (j in seq(1,length(nb2))) {
+    for (j in seq(1,length(nb2), by = 20)) {
       p <- p %>% add_trace(
         x = y,
         y = rep(nb2[j], length(y)),
@@ -2150,7 +2661,7 @@ nb2 <- seq(0,500,25)
       )
     }
     
-    #thick line on homogeneous case
+    #thick line
     p <- p %>% add_trace(
       x = rep(1, length(nb2)),
       y = nb2,
@@ -2160,8 +2671,47 @@ nb2 <- seq(0,500,25)
       line = list(color = "black", width = 10),
       showlegend = FALSE
     )
+    p <- p %>%
+      layout(
+        font = list(family = fontType),
+        scene = list(
+          xaxis = list(title = "Initial benefit of group 2",
+                       type = "log",
+                       showgrid = F,
+                       titlefont = axisFont,
+                       titlefont = axisFont,
+                       tickfont = list(size = 12),
+                       ticks    = "outside",
+                       ticklen  = 8,
+                       showline = TRUE, mirror = TRUE, zeroline = FALSE),
+          yaxis = list(title = "Number of members in group 2",
+                       titlefont = axisFont,
+                       titlefont = axisFont,
+                       tickfont = list(size = 12),
+                       ticks    = "outside",
+                       ticklen  = 8,
+                       showline = TRUE, mirror = TRUE, zeroline = FALSE),
+          zaxis = list(title = "Standard deviation",
+                       titlefont = axisFont,
+                       titlefont = axisFont,
+                       tickfont = list(size = 12),
+                       ticks    = "outside",
+                       ticklen  = 8,
+                       showline = TRUE, mirror = TRUE, zeroline = FALSE),
+          aspectratio = list(x = 1, y = 2, z = 1),
+          camera = list(
+            # Position the camera to look at the plot from a new angle
+            eye = list(x = 2.2*.85, y = 1.5*.85, z = .7*.85),
+            # shift image center
+            center = list(x=0,y=0,z=-.3))
+        ),
+        margin=list(t=0,l=0,b=0,r=0)
+      )
     p
-  }  
+  }   
+  save_image(p,paste0(exportPath,"SD3dWealthNB2.pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SD3dWealthNB2.pdf"))
 }
 
 
@@ -2262,28 +2812,6 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
       colorscale = list(c(0, "black"), c(1, "black")),
       reversescale = FALSE
     ) %>%
-      layout(
-        font = list(family = fontType),
-        plot_bgcolor = "lightgrey",   # uniform background color
-        paper_bgcolor = "white",  # outside background
-        title = list(text = paste("Implied SD with Size Cohort 2:",nb2,"people"),
-                     font = titleFont
-        ),
-        xaxis = list(title = "Age Cohort 2",
-                     showgrid = FALSE,
-                     range = c(min(df$age2), max(df$age2)),
-                     titlefont = axisFont
-        ),
-        yaxis = list(title = "Benefit: Cohort 2/Cohort 1",
-                     type = "log",
-                     showgrid = FALSE,
-                     range= log(c(min(df$benefitMultiplier),
-                                  max(df$benefitMultiplier)),10),
-                     titlefont = axisFont
-        ),
-        margin = list(t = 50, b=70),
-        showlegend = F
-      )%>%
       add_trace(
         data = dfbetterSD,
         x = ~age2,
@@ -2303,7 +2831,37 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
         marker = list(color = "rgba(255, 99, 71, 0.2)", size = 6, symbol = "circle"),
         name = "No No Region",
         inherit = FALSE
+      )%>%
+      layout(
+        font = list(family = fontType),
+        plot_bgcolor = "lightgrey",   # uniform background color
+        paper_bgcolor = "white",  # outside background
+        xaxis = list(title = list(text = "Age of members in group 2",
+                                  standoff = 5),
+                     showgrid = FALSE,
+                     range = c(min(df$age2), max(df$age2)),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        yaxis = list(title = list(text = "Initial benefit of group 2",
+                                  standoff = 5),
+                     type = "log",
+                     showgrid = FALSE,
+                     range= log(c(min(df$benefitMultiplier),
+                                  max(df$benefitMultiplier)),10),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        margin = list(t = 50, b=40),
+        showlegend = F
       )
+    p
   }
   save_image(p,paste0(exportPath,"ImpliedSDContour1Perspective",nb1,nb2,".pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
@@ -2405,28 +2963,6 @@ age1 <- 65      #only 60, 65 and 70 available
       colorscale = list(c(0, "black"), c(1, "black")),
       reversescale = FALSE
     ) %>%
-      layout(
-        font = list(family = fontType),
-        plot_bgcolor = "lightgrey",   # uniform background color
-        paper_bgcolor = "white",  # outside background
-        title = list(text = paste("Implied SD with Size Cohort 2:",nb2,"people"),
-                     font = titleFont
-        ),
-        xaxis = list(title = "Age Cohort 2",
-                     showgrid = FALSE,
-                     range = c(min(df$age2), max(df$age2)),
-                     titlefont = axisFont
-        ),
-        yaxis = list(title = "Benefit: Cohort 2/Cohort 1",
-                     type = "log",
-                     showgrid = FALSE,
-                     range= log(c(min(df$benefitMultiplier),
-                                  max(df$benefitMultiplier)),10),
-                     titlefont = axisFont
-        ),
-        margin = list(t = 50, b=70),
-        showlegend = F
-      )%>%
       add_trace(
         data = dfworsteSD,
         x = ~age2,
@@ -2436,7 +2972,37 @@ age1 <- 65      #only 60, 65 and 70 available
         marker = list(color = "rgba(255, 99, 71, 0.2)", size = 6, symbol = "circle"),
         name = "No No Region",
         inherit = FALSE
+      )%>%
+      layout(
+        font = list(family = fontType),
+        plot_bgcolor = "lightgrey",   # uniform background color
+        paper_bgcolor = "white",  # outside background
+        xaxis = list(title = list(text = "Age of members in group 2",
+                                  standoff = 5),
+                     showgrid = FALSE,
+                     range = c(min(df$age2), max(df$age2)),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        yaxis = list(title = list(text = "Initial benefit of group 2",
+                                  standoff = 5),
+                     type = "log",
+                     showgrid = FALSE,
+                     range= log(c(min(df$benefitMultiplier),
+                                  max(df$benefitMultiplier)),10),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        margin = list(t = 50, b=40),
+        showlegend = F
       )
+    p
   }
   save_image(p,paste0(exportPath,"ImpliedSDContour2Perspective",nb1,nb2,".pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
