@@ -14,9 +14,9 @@ reticulate::use_python("/opt/anaconda3/bin/python3")
 # py_install(c("kaleido==0.2.1", "plotly"))
 
 ###### Design and export choice ####
-exportPath <- "/Users/macbook/Library/Mobile\ Documents/com~apple~CloudDocs/School/SFU/Research/Coding/Plots/October10th/"
-fontType <- 'Times New Roman' #'Verdana' for report 'Times New Roman' for paper
-axisFont <- list(size=18, family = fontType)
+exportPath <- "/Users/macbook/Library/Mobile\ Documents/com~apple~CloudDocs/School/SFU/Research/Coding/Plots/October28th/"
+fontType <- 'Verdana' #'Verdana' for report 'Times New Roman' for paper
+axisFont <- list(size=15, family = fontType)
 titleFont <- list(size=30, family = fontType)
 legendFont <- list(size=12, family = fontType)
 
@@ -120,6 +120,45 @@ pixelsFullHeight <- 1754*(9.3/11) #removing margins
     }
     stability
   }
+  
+  thetaK <- function(timeK, nb1=100,nb2=0,age1=65,age2=65, ben1=1000, ben2=1000,
+                     epsilon = .1){
+    kp1 <- tpx(timeK, age1)
+    if(nb2==0){
+      return(pbinom(nb1*kp1/(1-epsilon), nb1, kp1, lower.tail = F))
+    }
+    
+    rfrate <- .02
+    kp2 <- tpx(timeK, age2)
+    ak1 <- as.vector(annuity(age1,rfrate))
+    ak2 <- as.vector(annuity(age2,rfrate))
+    y <- ben2/ben1
+    
+    c <- (nb1*kp1*ak1+y*nb2*kp2*ak2)/(1-epsilon)
+    
+    nk1 <- 0:nb1
+    
+    biggerCst <- (c-nk1*ak1)/(y*ak2)
+    probC1 <- dbinom(nk1,nb1,kp1)
+    probC2 <- pbinom(biggerCst, nb2, kp2, lower.tail = F)
+    
+    return(sum(probC1*probC2))
+  }
+  
+  compApproxSIP <- function(nb1=100,nb2=0,age1=65,age2=65, ben1=1000, ben2=1000,
+                            epsilon = .1, beta = .95){
+    prob <- 0
+    for (k in seq(1,50,by= 1)) {
+      prevProb <- prob
+      prob <- thetaK(k, nb1,nb2,age1,age2, ben1, ben2, epsilon)
+      if(prob>1-beta){
+        return((k-1)*(prob-(1-beta))/(prob-prevProb)
+               +k*(1-(prob-(1-beta))/(prob-prevProb)))
+        # return(c((k-1),k,prevProb,prob))
+      }
+    }
+  }
+  
 }
 
 ###############################################################################
@@ -128,8 +167,8 @@ pixelsFullHeight <- 1754*(9.3/11) #removing margins
 
 ####### SIP Contour Plot Group1's Perspective Risky Asset ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 # adjustable parameters
 nb2 <- 100     # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
@@ -140,14 +179,14 @@ nb1 <- 100      # Don't recommend to change, but some scenario available at nb1 
 # Generate plot
 {
   # import base stability when group 1 is on its own
-  riskSmallHomo <- readRDS(paste0("simulatedData/SIPBase_riskyAsset",
+  riskSmallHomo <- 1+readRDS(paste0("simulatedData/SIPBase_riskyAsset",
                                  nb1,".rds"))
   
   # import smoothed stability surface
   diffAge <- ifelse(age1!=65,paste(age1,"_",sep=""),"")
   name <- paste("simulatedData/controlledSIP_ParrallelComputingRiskyAsset",
                 diffAge,nb1,nb2,".rds", sep = "")
-  riskStability <- readRDS(name)
+  riskStability <- 1+readRDS(name)
   
   # compute better and worse areas
   {
@@ -268,8 +307,8 @@ nb1 <- 100      # Don't recommend to change, but some scenario available at nb1 
 }
 ####### SIP Contour Plot Group1's Perspective ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 # adjustable parameters
 nb2 <- 100     # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
@@ -280,14 +319,14 @@ nb1 <- 100      # Don't recommend to change, but some scenario available at nb1 
 # Generate plot
 {
   # import base stability when group 1 is on its own
-  riskSmallHomo <- readRDS(paste("simulatedData/BaseRisk",
+  riskSmallHomo <- 1+readRDS(paste("simulatedData/BaseRisk",
                                  age1,"_",nb1,".rds", sep = ""))
   
   # import smoothed stability surface
   diffAge <- ifelse(age1!=65,paste(age1,"_",sep=""),"")
   name <- paste("simulatedData/controlledYoS_ParrallelComputingBenefits",
                 diffAge,nb1,nb2,".rds", sep = "")
-  riskStability <- readRDS(name)
+  riskStability <- 1+readRDS(name)
   
   # compute better and worse areas
   {
@@ -404,11 +443,11 @@ nb1 <- 100      # Don't recommend to change, but some scenario available at nb1 
 
 ####### SIP Contour Plot Both Groups' Perspective ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 # adjustable parameters
-nb2 <- 100       # 50, 100 and 200 available for all
+nb2 <- 200       # 50, 100 and 200 available for all
 age1 <- 65      #only 60, 65 and 70 available
 
 # Generate plot
@@ -416,19 +455,19 @@ age1 <- 65      #only 60, 65 and 70 available
   nb1 <- 100      # Don't change
   
   # import base stability when group 1 is on its own
-  riskSmallHomo <- readRDS(paste("simulatedData/BaseRisk",
+  riskSmallHomo <- 1+readRDS(paste("simulatedData/BaseRisk",
                                  age1,"_",nb1,".rds", sep = ""))
   
   # import smoothed stability surface
   diffAge <- ifelse(age1!=65,paste(age1,"_",sep=""),"")
   name <- paste("simulatedData/controlledYoS_ParrallelComputingBenefits",
                 diffAge,nb1,nb2,".rds", sep = "")
-  riskStability <- readRDS(name)
+  riskStability <- 1+readRDS(name)
   
   # import smoothed stability when group 2 is on its own
   name <- paste("simulatedData/controlledYoS_ParrallelComputingBenefits",0,
                 nb2,".rds", sep = "")
-  riskStabilitySmallHomo <- readRDS(name)
+  riskStabilitySmallHomo <- 1+readRDS(name)
   
   # get worse areas (no better area possible for both at the same time)
   {
@@ -511,6 +550,7 @@ age1 <- 65      #only 60, 65 and 70 available
         margin = list(t = 50, b=40),
         showlegend = F
       )
+    p
   }
   save_image(p,paste0(exportPath,"SIPContour2Perspective",nb1,nb2,".pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
@@ -521,8 +561,8 @@ age1 <- 65      #only 60, 65 and 70 available
 
 ####### SIP Contour Plot Both Groups' Perspective Risky Asset########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 # adjustable parameters
 nb2 <- 100       # 50, 100 and 200 available for all
@@ -533,19 +573,19 @@ age1 <- 65      #only 60, 65 and 70 available
   nb1 <- 100      # Don't change
   
   # import base stability when group 1 is on its own
-  riskSmallHomo <- readRDS(paste("simulatedData/SIPBase_riskyAsset",
+  riskSmallHomo <- 1+readRDS(paste("simulatedData/SIPBase_riskyAsset",
                                  nb1,".rds", sep = ""))
   
   # import smoothed stability surface
   diffAge <- ifelse(age1!=65,paste(age1,"_",sep=""),"")
   name <- paste("simulatedData/controlledSIP_ParrallelComputingRiskyAsset",
                 diffAge,nb1,nb2,".rds", sep = "")
-  riskStability <- readRDS(name)
+  riskStability <- 1+readRDS(name)
   
   # import smoothed stability when group 2 is on its own
   name <- paste("simulatedData/controlledSIP_ParrallelComputingRiskyAsset",0,
                 nb2,".rds", sep = "")
-  riskStabilitySmallHomo <- readRDS(name)
+  riskStabilitySmallHomo <- 1+readRDS(name)
   
   # get worse areas (no better area possible for both at the same time)
   {
@@ -644,10 +684,10 @@ age1 <- 65      #only 60, 65 and 70 available
 
 
 
-####### SIP 2D Plot Age Heterogeneity ########
+####### SIP 2D Plot Age Heterogeneity We ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 # adjustable parameters
 nb2 <- 100       # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
@@ -659,14 +699,14 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
 # Generate plot (put it in full screen before saving for better placement of legend)
 {
   # import base stability when group 1 is on its own
-  riskSmallHomo <- readRDS(paste("simulatedData/BaseRisk",
+  riskSmallHomo <- 1+readRDS(paste("simulatedData/BaseRisk",
                                  age1,"_",nb1,".rds", sep = ""))
   
   # import smoothed stability surface
   diffAge <- ifelse(age1!=65,paste(age1,"_",sep=""),"")
   name <- paste("simulatedData/controlledYoS_ParrallelComputingBenefits",
                 diffAge,nb1,nb2,".rds", sep = "")
-  riskStability <- readRDS(name)
+  riskStability <- 1+readRDS(name)
   
   # extract wealth slice
   {
@@ -759,8 +799,8 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
 
 ####### SIP 2D Plot Wealth Heterogeneity ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 
 # adjustable parameters
@@ -773,14 +813,14 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
 # Generate plot (put it in full screen before saving for better placement of legend)
 {
   # import base stability when group 1 is on its own
-  riskSmallHomo <- readRDS(paste("simulatedData/BaseRisk",
+  riskSmallHomo <- 1+readRDS(paste("simulatedData/BaseRisk",
                                  age1,"_",nb1,".rds", sep = ""))
   
   # import smoothed stability surface
   diffAge <- ifelse(age1!=65,paste(age1,"_",sep=""),"")
   name <- paste("simulatedData/controlledYoS_ParrallelComputingBenefits",
                 diffAge,nb1,nb2,".rds", sep = "")
-  riskStability <- readRDS(name)
+  riskStability <- 1+readRDS(name)
   
   # extract age slice
   {
@@ -894,8 +934,8 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
 
 ####### SIP Homogeneous evolution with nb1 ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 
 # adjustable parameters
@@ -910,7 +950,7 @@ age1 <- c(60,65,70)   # only 60, 65 and 70 available, can select some are all of
     riskStability <- matrix(0, length(age1), length(nb1))
     for (i in seq_along(age1)) {
       name <- paste("simulatedData/controlledYoS_ParrallelComputingHomo",age1[i],".rds", sep = "")
-      riskStability[i,] <- readRDS(name)
+      riskStability[i,] <- 1+readRDS(name)
     }
   }
   
@@ -971,8 +1011,8 @@ age1 <- c(60,65,70)   # only 60, 65 and 70 available, can select some are all of
 
 ####### SIP Heterogeneous Mortality evolution with nb2 ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4   #height
+w <- .8    #width
+h <- .3   #height
 
 
 # adjustable parameters
@@ -989,7 +1029,7 @@ age2 <- c(55,60,65,70,75)   # only 55, 60, 65, 70 and 75 available
     riskStability <- matrix(0, length(age2), length(nb2))
     for (i in seq_along(age2)) {
       name <- paste("simulatedData/controlledYoS_ParrallelComputingHeteAge",age2[i],".rds", sep = "")
-      riskStability[i,] <- readRDS(name)
+      riskStability[i,] <- 1+readRDS(name)
     }
   }
   
@@ -1050,8 +1090,8 @@ age2 <- c(55,60,65,70,75)   # only 55, 60, 65, 70 and 75 available
 
 ####### SIP Heterogeneous Wealth evolution with nb2 ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 
 # adjustable parameters
@@ -1068,7 +1108,7 @@ BMulti <- c(.2,.5,1,2,5) #ratio of benefit2/benefit1
     riskStability <- matrix(0, length(BMulti), length(nb2))
     for (i in seq_along(BMulti)) {
       name <- paste("simulatedData/controlledYoS_ParrallelComputingHeteWealth",BMulti[i],".rds", sep = "")
-      riskStability[i,] <- readRDS(name)
+      riskStability[i,] <- 1+readRDS(name)
     }
   }
   
@@ -1130,8 +1170,8 @@ BMulti <- c(.2,.5,1,2,5) #ratio of benefit2/benefit1
 
 ####### SIP Heterogeneous Wealth evolution with TOTAL participants ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 
 # adjustable parameters
@@ -1149,7 +1189,7 @@ nb2 <- rev(nb1)
     riskStability <- matrix(0, length(BMulti), length(nb2))
     for (i in seq_along(BMulti)) {
       name <- paste("simulatedData/ControlledSIP_ParrallelComputingHeteWealth",BMulti[i],"Tot.rds", sep = "")
-      riskStability[i,] <- readRDS(name)
+      riskStability[i,] <- 1+readRDS(name)
     }
   }
   
@@ -1214,8 +1254,8 @@ nb2 <- rev(nb1)
 }
 ####### SIP Heterogeneous Mortality evolution with TOTAL participants ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 
 # adjustable parameters
@@ -1232,7 +1272,7 @@ nb2 <- rev(nb1)
     riskStability <- matrix(0, length(BMulti), length(nb2))
     for (i in seq_along(BMulti)) {
       name <- paste("simulatedData/ControlledSIP_ParrallelComputingHeteMortality",ages[i],"Tot.rds", sep = "")
-      riskStability[i,] <- readRDS(name)
+      riskStability[i,] <- 1+readRDS(name)
     }
   }
   
@@ -1284,9 +1324,9 @@ nb2 <- rev(nb1)
     )
     p
   }
-  save_image(p,paste0(exportPath,"SDMortalityHeteTot.pdf"),
+  save_image(p,paste0(exportPath,"SIPMortalityHeteTot.pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"SDMortalityHeteTot.pdf"))
+  browseURL(paste0(exportPath,"SIPMortalityHeteTot.pdf"))
   
   #other export option
   # saveWidget(p, paste0(exportPath,"SDMortalityHeteTot.html"), selfcontained = TRUE)
@@ -1303,8 +1343,8 @@ nb2 <- rev(nb1)
 #########################################
 ####### Empirical Dist of NB of stable years with smoothing######
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 
 # adjustable parameters
@@ -1454,8 +1494,8 @@ beta <- .95       #treshhold illustrated in plot
 ###############################################################################
 ####### SD Contour Plot Group1's Perspective ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 
 # adjustable parameters
@@ -1596,8 +1636,8 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
 
 ####### SD Contour Plot Both Groups' Perspective ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 
 # adjustable parameters
@@ -1725,8 +1765,8 @@ age1 <- 65      #only 60, 65 and 70 available
 
 ####### SD 2D Plot Age Heterogeneity ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 
 # adjustable parameters
@@ -1846,8 +1886,8 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
 
 ####### SD 2D Plot Wealth Heterogeneity ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 
 # adjustable parameters
@@ -1987,8 +2027,8 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
 
 ####### SD Homogeneous evolution with nb1 ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8 #width
+h <- .3  #height
 
 
 # adjustable parameters
@@ -2064,8 +2104,8 @@ age1 <- c(60,65,70)   # only 60, 65 and 70 available in section 5
 
 ####### SD Heterogeneous Mortality evolution with nb2 ########
 #dimensions as percentage of page
-w <- 1   #width
-h <- .4  #height
+w <- .8   #width
+h <- .3  #height
 
 
 # adjustable parameters
@@ -2145,8 +2185,8 @@ age2 <- c(55, 60,65,70,75)   # only 55, 60, 65, 70 and 75 available in section 5
 
 ####### SD Heterogeneous Wealth evolution with nb2 ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 
 # adjustable parameters
@@ -2227,8 +2267,8 @@ BMulti <- c(.2,.5,1,2,5) #ratio of benefit2/benefit1
 
 ####### SD Heterogeneous Wealth evolution with TOTAL participants ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 
 # adjustable parameters
@@ -2308,8 +2348,8 @@ nb2 <- rev(nb1)
 
 ####### SD Heterogeneous Mortality evolution with TOTAL participants ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 
 # adjustable parameters
@@ -2386,8 +2426,8 @@ nb2 <- rev(nb1)
 
 ####### SD 3D Homogeneous Nb People to Age ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 
 # adjustable parameters
@@ -2425,7 +2465,7 @@ nb2 <- 0 # to stay homogeneous
         z = riskStability[,j ],
         type = "scatter3d",
         mode = "lines",
-        line = list(color = "black", width = 2),
+        line = list(color = "black", width = 3),
         showlegend = FALSE
       )
     }
@@ -2438,7 +2478,7 @@ nb2 <- 0 # to stay homogeneous
         z = riskStability[i,],
         type = "scatter3d",
         mode = "lines",
-        line = list(color = "black", width = 2),
+        line = list(color = "black", width = 3),
         showlegend = FALSE
       )
     }
@@ -2470,9 +2510,9 @@ nb2 <- 0 # to stay homogeneous
           aspectratio = list(x = 1, y = 2, z = 1),
           camera = list(
             # Position the camera to look at the plot from a new angle
-            eye = list(x = -2.2*.9, y = 1*.9, z = .7*.9),
+            eye = list(x = -2.2*.95, y = 1*.95, z = .7*.95),
             # shift image center
-            center = list(x=1*.05,y=1.9*.03,z=-.25))
+            center = list(x=1*.05,y=1.9*.07,z=-.3))
         ),
         margin=list(t=0,l=0,b=0,r=0)
       )
@@ -2487,8 +2527,8 @@ nb2 <- 0 # to stay homogeneous
 
 ####### SD 3D Heterogeneous Mortality evolution with nb2 ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 
 # adjustable parameters
@@ -2585,9 +2625,9 @@ nb2 <- seq(0,500,1)
           aspectratio = list(x = 1, y = 2, z = 1),
           camera = list(
             # Position the camera to look at the plot from a new angle
-            eye = list(x = -2.2*.9, y = 1*.9, z = .7*.9),
+            eye = list(x = -2.2*.95, y = 1*.95, z = .7*.95),
             # shift image center
-            center = list(x=1*.05,y=1.9*.03,z=-.25))
+            center = list(x=1*.05,y=1.9*.07,z=-.3))
         ),
         margin=list(t=0,l=0,b=0,r=0)
       )
@@ -2600,8 +2640,8 @@ nb2 <- seq(0,500,1)
 
 ####### SD 3D Heterogeneous Wealth evolution with nb2 ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 
 # adjustable parameters
@@ -2701,9 +2741,9 @@ nb2 <- seq(0,500,1)
           aspectratio = list(x = 1, y = 2, z = 1),
           camera = list(
             # Position the camera to look at the plot from a new angle
-            eye = list(x = 2.2*.85, y = 1.5*.85, z = .7*.85),
+            eye = list(x = 2.2*.95, y = 1.5*.95, z = .7*.95),
             # shift image center
-            center = list(x=0,y=0,z=-.3))
+            center = list(x=0,y=0,z=-.4))
         ),
         margin=list(t=0,l=0,b=0,r=0)
       )
@@ -2720,8 +2760,8 @@ nb2 <- seq(0,500,1)
 #########################################
 ####### Implied Nb1 Contour Plot Group1's Perspective ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 # adjustable parameters
 nb2 <- 100      # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
@@ -2872,8 +2912,8 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
 
 ####### Implied Nb1 Contour Plot Both Groups' Perspective ########
 #dimensions as percentage of page
-w <- 1    #width
-h <- .4  #height
+w <- .8    #width
+h <- .3  #height
 
 # adjustable parameters
 nb2 <- 100       # 50, 100 and 200 available for all
@@ -3010,3 +3050,353 @@ age1 <- 65      #only 60, 65 and 70 available
 }
 
 
+
+
+###############################################################################
+# Plots for Section 6 Approx SIP 
+# (Any parameter possible except for error measure)
+###############################################################################
+####### Approx SIP Contour Plot Group1's Perspective ########
+#dimensions as percentage of page
+w <- .8   #width
+h <- .3  #height
+
+# adjustable parameters
+nb1 <- 100
+nb2 <- 100
+age1 <- 65
+{
+  ##Compute riskStabilityApprox
+  {
+    tic()
+    benefit1 <- 1000
+    age2 <- seq(55, 75, by = .1)
+    benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 100))
+    benefit2 <- benefit1*benefitMultiplier
+    riskStabilityApprox <- matrix(0,length(age2),length(benefitMultiplier))
+    for (i in seq_along(age2)) {
+      for (j in seq_along(benefit2)) {
+        riskStabilityApprox[i,j] <- compApproxSIP(nb1, nb2, age1, age2[i], benefit1,
+                                                  benefit2[j])
+      }
+    }
+    toc()
+    
+    # SD surface for smoothing purposes
+    {
+      asset1 <- as.vector(benefit1 *annuity(age1, rate = .02))
+      asset2 <- (benefit2 %*% t(sapply(age2, annuity, rate = .02)))
+      sdProxy <- matrix(0,length(age2),length(benefitMultiplier))
+      for (i in seq_along(age2)) {
+        for (j in seq_along(benefitMultiplier)) {
+          sdProxy[i,j] <- sqrt(Variance1Periode(age1, asset1, nb1, age2[i],
+                                                asset2[j,i], nb2) )
+        }
+      }
+      
+    }
+    
+    grid <- expand.grid(age = age2, benMulti = benefitMultiplier)
+    
+    ### Flatten matrices column-wise (assuming they match grid layout)
+    grid$sdProxy <- as.vector(sdProxy)
+    grid$VaR_Y <- as.vector(riskStabilityApprox)
+    
+    ### fit model
+    
+    gam_fit <- gam(VaR_Y ~ te(age, benMulti, sdProxy, k=5), data = grid)
+    summary(gam_fit)
+    
+    grid$VaR_Y_smooth <- predict(gam_fit, newdata = grid)
+    
+    riskStabilityApproxSmooth <- matrix(grid$VaR_Y_smooth, nrow = length(age2),
+                                        ncol = length(benefitMultiplier))
+    
+    
+  }
+  #better and worse area
+  {
+    riskSmallHomoApprox <- compApproxSIP(nb1, 0, age1, age1, benefit1,
+                                         benefit1)
+    
+    ## get stability when group 1 and 2 are homogeneous from imported surface
+    benMultiToExtract <- 1
+    age2 <- seq(55, 75, by = .1)
+    benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 100))
+    colMultiplier <- which.min(abs(benefitMultiplier-benMultiToExtract)) 
+    rowAge <- which(age1==age2)
+    homoYoSApprox <- riskStabilityApproxSmooth[rowAge,colMultiplier]
+    
+    ## extract better (green) area
+    dfbetterYoSApprox <- list(YoS = riskStabilityApproxSmooth[riskStabilityApproxSmooth>=homoYoSApprox])
+    dfbetterYoSApprox$age2 <-  matrix(rep(age2, length(benefitMultiplier)),
+                                      ncol = length(benefitMultiplier))[riskStabilityApproxSmooth
+                                                                        >=homoYoSApprox]
+    dfbetterYoSApprox$benefitMultiplier <- matrix(rep(benefitMultiplier, length(age2)),
+                                                  nrow = length(age2),
+                                                  byrow = T)[riskStabilityApproxSmooth>=homoYoSApprox]
+    
+    ## extract worst (red) area
+    dfworsteYoSApprox <- list(YoS = riskStabilityApproxSmooth[riskStabilityApproxSmooth<=riskSmallHomoApprox])
+    dfworsteYoSApprox$age2 <-  matrix(rep(age2, length(benefitMultiplier)),
+                                      ncol = length(benefitMultiplier))[riskStabilityApproxSmooth
+                                                                        <=riskSmallHomoApprox]
+    dfworsteYoSApprox$benefitMultiplier <- matrix(rep(benefitMultiplier, length(age2)),
+                                                  nrow = length(age2),
+                                                  byrow = T)[riskStabilityApproxSmooth<=riskSmallHomoApprox]
+    
+  }
+  ## approx surface contour
+  {
+    # Prepare data in long format
+    df <- melt(riskStabilityApproxSmooth)
+    colnames(df) <- c("ageIndex", "benefitIndex", "YoS")
+    df$benefitMultiplier <- benefitMultiplier[df$benefitIndex]
+    df$age2 <- age2[df$ageIndex]
+    
+    # Create contour plot
+    p <- plot_ly(
+      data = df,
+      x = ~age2,
+      y = ~benefitMultiplier,
+      z = ~YoS,
+      type = "contour",
+      showscale = FALSE,
+      contours = list(
+        coloring = "lines",  # or "lines", "none"
+        showlabels = TRUE
+      ),
+      line = list(smoothing = 0),
+      colorscale = list(c(0, "black"), c(1, "black")),
+      reversescale = FALSE
+    ) %>%
+      add_trace(
+        data = dfbetterYoSApprox,
+        x = ~age2,
+        y = ~benefitMultiplier,
+        type = "scatter",
+        mode = "markers",
+        marker = list(color = "rgba(144, 238, 144, 0.3)", size = 6, symbol = "circle"),
+        name = "Preferred Region",
+        inherit = FALSE
+      )%>%
+      add_trace(
+        data = dfworsteYoSApprox,
+        x = ~age2,
+        y = ~benefitMultiplier,
+        type = "scatter",
+        mode = "markers",
+        marker = list(color = "rgba(255, 99, 71, 0.2)", size = 6, symbol = "circle"),
+        name = "No No Region",
+        inherit = FALSE
+      ) %>%
+      layout(
+        font = list(family = fontType),
+        plot_bgcolor = "lightgrey",   # uniform background color
+        paper_bgcolor = "white",  # outside background
+        xaxis = list(title = list(text = "Age of members in group 2",
+                                  standoff = 5),
+                     showgrid = FALSE,
+                     range = c(min(df$age2), max(df$age2)),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        yaxis = list(title = list(text = "Initial benefit of group 2",
+                                  standoff = 5),
+                     type = "log",
+                     showgrid = FALSE,
+                     range= log(c(min(df$benefitMultiplier),
+                                  max(df$benefitMultiplier)),10),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        margin = list(t = 50, b=40),
+        showlegend = F
+      )
+    p
+  }
+  save_image(p,paste0(exportPath,"ApproxSIPContour1Perspective",nb1,nb2,".pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"ApproxSIPContour1Perspective",nb1,nb2,".pdf"))
+}
+####### Approx SIP Contour Plot Both Groups' Perspective ########
+#dimensions as percentage of page
+w <- .8   #width
+h <- .3  #height
+
+# adjustable parameters
+nb1 <- 100
+nb2 <- 50
+age1 <- 65
+{
+  ####Compute riskStabilityApprox
+  {
+    tic()
+    benefit1 <- 1000
+    age2 <- seq(55, 75, by = .1)
+    benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 100))
+    benefit2 <- benefit1*benefitMultiplier
+    riskStabilityApprox <- matrix(0,length(age2),length(benefitMultiplier))
+    for (i in seq_along(age2)) {
+      for (j in seq_along(benefit2)) {
+        riskStabilityApprox[i,j] <- compApproxSIP(nb1, nb2, age1, age2[i], benefit1,
+                                                  benefit2[j])
+      }
+    }
+    toc()
+    
+    tic()
+    riskStabilitySmallHomoApprox <- matrix(0,length(age2),length(benefitMultiplier))
+    for (i in seq_along(age2)) {
+      for (j in seq_along(benefit2)) {
+        riskStabilitySmallHomoApprox[i,j] <- compApproxSIP(0, nb2, age1, age2[i], benefit1,
+                                                           benefit2[j])
+      }
+    }
+    toc()
+    
+    # SD surface for smoothing purposes
+    {
+      asset1 <- as.vector(benefit1 *annuity(age1, rate = .02))
+      asset2 <- (benefit2 %*% t(sapply(age2, annuity, rate = .02)))
+      sdProxy <- matrix(0,length(age2),length(benefitMultiplier))
+      for (i in seq_along(age2)) {
+        for (j in seq_along(benefitMultiplier)) {
+          sdProxy[i,j] <- sqrt(Variance1Periode(age1, asset1, nb1, age2[i],
+                                                asset2[j,i], nb2) )
+        }
+      }
+      sdProxySmallHomo <- matrix(0,length(age2),length(benefitMultiplier))
+      for (i in seq_along(age2)) {
+        for (j in seq_along(benefitMultiplier)) {
+          sdProxySmallHomo[i,j] <- sqrt(Variance1Periode(age1, asset1, 0, age2[i],
+                                                         asset2[j,i], nb2) )
+        }
+      }
+      
+    }
+    
+    grid <- expand.grid(age = age2, benMulti = benefitMultiplier)
+    
+    ### Flatten matrices column-wise (assuming they match grid layout)
+    grid$sdProxy <- as.vector(sdProxy)
+    grid$VaR_Y <- as.vector(riskStabilityApprox)
+    
+    ### fit model
+    
+    gam_fit <- gam(VaR_Y ~ te(age, benMulti, sdProxy, k=5), data = grid)
+    summary(gam_fit)
+    
+    grid$VaR_Y_smooth <- predict(gam_fit, newdata = grid)
+    
+    riskStabilityApproxSmooth <- matrix(grid$VaR_Y_smooth, nrow = length(age2),
+                                        ncol = length(benefitMultiplier))
+    
+    ### add SmallHomo (assuming they match grid layout)
+    grid$sdProxySmallHomo <- as.vector(sdProxySmallHomo)
+    grid$SIPsmallHomo <- as.vector(riskStabilitySmallHomoApprox)
+    
+    ### fit model
+    
+    gam_fit <- gam(SIPsmallHomo ~ te(age, benMulti, sdProxySmallHomo, k=3), data = grid)
+    summary(gam_fit)
+    
+    grid$VaR_Y_smooth <- predict(gam_fit, newdata = grid)
+    
+    riskStabilitySmallHomoApproxSmooth <- matrix(grid$VaR_Y_smooth, nrow = length(age2),
+                                                 ncol = length(benefitMultiplier))
+    
+  }
+  #worse area
+  {
+    age2 <- seq(55, 75, by = .1)
+    benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 100))
+    riskSmallHomoApprox <- compApproxYoS(nb1, 0, age1, age1, benefit1,
+                                         benefit1)
+    
+    dfworsteYoSApprox <- list(YoS = riskStabilityApproxSmooth[riskStabilityApproxSmooth<=riskStabilitySmallHomoApproxSmooth
+                                                              |riskStabilityApproxSmooth<=riskSmallHomoApprox])
+    dfworsteYoSApprox$age2 <-  matrix(rep(age2, length(benefitMultiplier)),
+                                      ncol = length(benefitMultiplier))[riskStabilityApproxSmooth<=riskStabilitySmallHomoApproxSmooth
+                                                                        |riskStabilityApproxSmooth<=riskSmallHomoApprox]
+    dfworsteYoSApprox$benefitMultiplier <- matrix(rep(benefitMultiplier, length(age2)),
+                                                  nrow = length(age2),
+                                                  byrow = T)[riskStabilityApproxSmooth<=riskStabilitySmallHomoApproxSmooth
+                                                             |riskStabilityApproxSmooth<=riskSmallHomoApprox]
+    
+  }
+  ## approx surface contour
+  {
+    # Prepare data in long format
+    df <- melt(riskStabilityApproxSmooth)
+    colnames(df) <- c("ageIndex", "benefitIndex", "YoS")
+    df$benefitMultiplier <- benefitMultiplier[df$benefitIndex]
+    df$age2 <- age2[df$ageIndex]
+    
+    # Create contour plot
+    p <- plot_ly(
+      data = df,
+      x = ~age2,
+      y = ~benefitMultiplier,
+      z = ~YoS,
+      type = "contour",
+      showscale = FALSE,
+      contours = list(
+        coloring = "lines",  # or "lines", "none"
+        showlabels = TRUE
+      ),
+      line = list(smoothing = 0),
+      colorscale = list(c(0, "black"), c(1, "black")),
+      reversescale = FALSE
+    ) %>%
+      add_trace(
+        data = dfworsteYoSApprox,
+        x = ~age2,
+        y = ~benefitMultiplier,
+        type = "scatter",
+        mode = "markers",
+        marker = list(color = "rgba(255, 99, 71, 0.2)", size = 6, symbol = "circle"),
+        name = "No No Region",
+        inherit = FALSE
+      )%>%
+      layout(
+        font = list(family = fontType),
+        plot_bgcolor = "lightgrey",   # uniform background color
+        paper_bgcolor = "white",  # outside background
+        xaxis = list(title = list(text = "Age of members in group 2",
+                                  standoff = 5),
+                     showgrid = FALSE,
+                     range = c(min(df$age2), max(df$age2)),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        yaxis = list(title = list(text = "Initial benefit of group 2",
+                                  standoff = 5),
+                     type = "log",
+                     showgrid = FALSE,
+                     range= log(c(min(df$benefitMultiplier),
+                                  max(df$benefitMultiplier)),10),
+                     titlefont = axisFont,
+                     tickfont = list(size = 12),
+                     ticks    = "outside",
+                     ticklen  = 8,
+                     showline = TRUE, mirror = TRUE, zeroline = FALSE
+        ),
+        margin = list(t = 50, b=40),
+        showlegend = F
+      )
+    p
+  }
+  save_image(p,paste0(exportPath,"ApproxSIPContour2Perspective",nb1,nb2,".pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"ApproxSIPContour2Perspective",nb1,nb2,".pdf"))
+}
