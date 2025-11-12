@@ -776,7 +776,7 @@ age1 <- 65      #only 60, 65 and 70 available
 
 
 
-####### SIP 2D Plot Age Heterogeneity We ########
+####### SIP 2D Plot Age Heterogeneity ########
 #dimensions as percentage of page
 w <- .8    #width
 h <- .3  #height
@@ -858,7 +858,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Number of members in group 2",
+      xaxis = list(title = list(text = "Age of members in group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),
@@ -990,7 +990,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Number of members in group 2",
+      xaxis = list(title = list(text = "Initial benefit of in group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),showgrid=FALSE,
@@ -1431,7 +1431,7 @@ nb2 <- rev(nb1)
 
 
 #########################################
-# Section 4: other figures then results
+# Section 4: other figures then main results
 #########################################
 ####### Empirical Dist of NB of stable years with smoothing######
 #dimensions as percentage of page
@@ -1579,6 +1579,144 @@ beta <- .95       #treshhold illustrated in plot
   browseURL(paste0(exportPath,"smoothedVSempericalSIP.pdf"))
 }
 
+####### SIP Different m Parameter Mortality ########
+#dimensions as percentage of page
+w <- 1    #width
+h <- .3  #height
+
+nb2 <- 100 #no other option
+nb1 <- 100 #no other option
+
+{
+  #axis
+  mVec <- seq(70,90, by = .1)
+  b2 <- seq(8,16, by=.1)
+  
+  name <- paste0("simulatedData/controlledSIP_ParrallelComputingMortalityParam",nb1,".rds")
+  SIP <- readRDS(name)
+  
+  #slice plot
+  {
+    # adjustable parameters
+    nb2 <- 100       # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
+    age1 <- 65      # only 60, 65 and 70 available
+    diff_b2 <- c(8, 10, 12, 14, 16) # Any amount of value from interval [.1,10], Benefit of group 2 compared to group 1
+    
+    nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500)
+    
+    # Generate plot (put it in full screen before saving for better placement of legend)
+    {
+      # extract wealth slice
+      {
+        # get wealth slices
+        age2 <- seq(55, 75, by = .1)
+        b2 <- seq(8,16, by=.1)
+        colMultiplier <- sapply(diff_b2, function(x)which.min(abs(b2-x)))
+        slices <- SIP_smooth[,colMultiplier]
+      }
+      
+      #plot wrt m
+      {
+        colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
+        colors <- rep(colors, length.out = ncol(slices))  # ensure enough colors
+        p <- plot_ly() 
+        
+        # Add each column of slices as a separate trace
+        for (i in 1:ncol(slices)) {
+          p <- add_trace(
+            p,
+            x = mVec,
+            y = slices[, i],
+            type = 'scatter',
+            mode = 'lines',
+            line = list(color = colors[i]),
+            name = paste0("<i>b<sub>2</sub></i> = ", diff_b2[i])
+          )
+        }
+        # Final layout
+        p <- layout(
+          p,
+          font = list(family = fontType),
+          xaxis = list(title = list(text = "Parameter m for members in group 2",
+                                    standoff = 5),
+                       titlefont = axisFont,
+                       tickfont = list(size = 12),
+                       ticks    = "outside",
+                       ticklen  = 8,
+                       showline = TRUE, mirror = TRUE, zeroline = FALSE),
+          yaxis = list(title = list(text = "Stable income period"),
+                       titlefont = axisFont,
+                       tickfont = list(size = 12),
+                       ticks    = "outside",
+                       ticklen  = 8,
+                       showline = TRUE, mirror = TRUE, zeroline = FALSE),
+          legend = list(x = 0.02, y = .98,
+                        xanchor = "left",
+                        yanchor = "top",
+                        font = legendFont,
+                        bordercolor = "black", # Set the legend border color
+                        borderwidth = 1,
+                        bgcolor = "rgba(255, 255, 255, 0.9)"),
+          margin = list(t = 30, b=40)
+        )
+        p
+      }
+      save_image(p,paste0(exportPath,"SIPHeteMortDist_m.pdf"),
+                 width = w/2*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+      browseURL(paste0(exportPath,"SIPHeteMortDist_m.pdf"))
+      
+      #plot wrt age
+      {
+        colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
+        colors <- rep(colors, length.out = ncol(slices))  # ensure enough colors
+        p <- plot_ly() 
+        
+        # Add each column of slices as a separate trace
+        for (i in 1:ncol(slices)) {
+          p <- add_trace(
+            p,
+            x = age2,
+            y = rev(slices[, i]),
+            type = 'scatter',
+            mode = 'lines',
+            line = list(color = colors[i]),
+            name = paste0("<i>b<sub>2</sub></i> = ", diff_b2[i])
+          )
+        }
+        # Final layout
+        p <- layout(
+          p,
+          font = list(family = fontType),
+          xaxis = list(title = list(text = "Age of members in group 2",
+                                    standoff = 5),
+                       titlefont = axisFont,
+                       tickfont = list(size = 12),
+                       ticks    = "outside",
+                       ticklen  = 8,
+                       showline = TRUE, mirror = TRUE, zeroline = FALSE),
+          yaxis = list(title = list(text = "Stable income period"),
+                       titlefont = axisFont,
+                       tickfont = list(size = 12),
+                       ticks    = "outside",
+                       ticklen  = 8,
+                       showline = TRUE, mirror = TRUE, zeroline = FALSE),
+          legend = list(x = 0.98, y = .98,
+                        xanchor = "right",
+                        yanchor = "top",
+                        font = legendFont,
+                        bordercolor = "black", # Set the legend border color
+                        borderwidth = 1,
+                        bgcolor = "rgba(255, 255, 255, 0.9)"),
+          margin = list(t = 30, b=40)
+        )
+        p
+      }
+      save_image(p,paste0(exportPath,"SIPHeteMortDist_age.pdf"),
+                 width = w/2*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+      browseURL(paste0(exportPath,"SIPHeteMortDist_age.pdf"))
+    }
+  }
+}
 ###############################################################################
 # Plots for Section 3 SD 
 # (Adjustable parameter constraint are only suggestion to match section 5,
@@ -1945,7 +2083,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Number of members in group 2",
+      xaxis = list(title = list(text = "Age of members in group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),
@@ -2084,7 +2222,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Number of members in group 2",
+      xaxis = list(title = list(text = "Initial benefit of group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),showgrid=FALSE,
@@ -3496,138 +3634,6 @@ age1 <- 65
 ###############################################################################
 # Plots for Section 6 Mitigation
 ###############################################################################
-####### Example pool pre mitigation #######
-#dimensions as percentage of page
-w <- .7    #width
-h <- .25  #height
-
-# adjustable parameters
-nb2 <- 100        # 50, 100 and 200 available for all
-
-age1 <- 65        #only 60, 65 and 70 available
-benefit1 <- 100
-age2 <- 73
-benefit2 <- 500
-
-{
-  nb1 <- 100        # do not change
-  currentY <- benefit2/benefit1
-  
-  
-  
-  # import base stability when group 1 is on its own
-  riskSmallHomo <- 1+readRDS(paste("simulatedData/BaseRisk",
-                                 age1,"_",nb1,".rds", sep = ""))
-  
-  # import smoothed stability surface
-  diffAge <- ifelse(age1!=65,paste(age1,"_",sep=""),"")
-  name <- paste("simulatedData/controlledYoS_ParrallelComputingBenefits",
-                diffAge,nb1,nb2,".rds", sep = "")
-  riskStability <- 1+readRDS(name)
-  
-  # import smoothed stability when group 2 is on its own
-  name <- paste("simulatedData/controlledYoS_ParrallelComputingBenefits",0,
-                nb2,".rds", sep = "")
-  riskStabilitySmallHomo <- 1+readRDS(name)
-  
-  # get worse areas (no better area possible for both at the same time)
-  {
-    age2Vec <- seq(55, 75, by = .1)
-    benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 100))
-    
-    
-    dfworsteYoS <- list(YoS = riskStability[riskStability<=riskStabilitySmallHomo
-                                            |riskStability<=riskSmallHomo])
-    dfworsteYoS$age2Vec <-  matrix(rep(age2Vec, length(benefitMultiplier)),
-                                   ncol = length(benefitMultiplier))[riskStability<=riskStabilitySmallHomo
-                                                                     |riskStability<=riskSmallHomo]
-    dfworsteYoS$benefitMultiplier <- matrix(rep(benefitMultiplier, length(age2Vec)),
-                                            nrow = length(age2Vec),
-                                            byrow = T)[riskStability<=riskStabilitySmallHomo
-                                                       |riskStability<=riskSmallHomo]
-    
-  }
-  
-  # contour Plot
-  {
-    # Prepare data in long format
-    df <- melt(riskStability)
-    colnames(df) <- c("ageIndex", "benefitIndex", "YoS")
-    df$benefitMultiplier <- benefitMultiplier[df$benefitIndex]
-    df$age2Vec <- age2Vec[df$ageIndex]
-    
-    # Create contour plot
-    p <- plot_ly(
-      data = df,
-      x = ~age2Vec,
-      y = ~benefitMultiplier,
-      z = ~YoS,
-      type = "contour",
-      showscale = FALSE,
-      contours = list(
-        coloring = "lines",  # or "lines", "none"
-        showlabels = TRUE
-      ),
-      line = list(smoothing = 0),
-      colorscale = list(c(0, "black"), c(1, "black")),
-      reversescale = FALSE
-    ) %>%
-      add_trace(
-        data = dfworsteYoS,
-        x = ~age2Vec,
-        y = ~benefitMultiplier,
-        type = "scatter",
-        mode = "markers",
-        marker = list(color = "rgba(255, 99, 71, 0.2)", size = 6, symbol = "circle"),
-        name = "No No Region",
-        inherit = FALSE
-      ) %>%
-      add_trace(
-        x = c(age2),
-        y = c(currentY),
-        type = "scatter",
-        mode = "markers",
-        marker = list(color = "blue", size = 7, symbol = "circle"),
-        name = "Current point",
-        inherit = FALSE
-      ) %>%
-      layout(
-        font = list(family = fontType),
-        plot_bgcolor = "lightgrey",   # uniform background color
-        paper_bgcolor = "white",  # outside background
-        xaxis = list(title = list(text = "Age of members in group 2",
-                                  standoff = 5),
-                     showgrid = FALSE,
-                     range = c(min(df$age2Vec), max(df$age2Vec)),
-                     titlefont = axisFont,
-                     tickfont = list(size = 12),
-                     ticks    = "outside",
-                     ticklen  = 8,
-                     showline = TRUE, mirror = TRUE, zeroline = FALSE
-        ),
-        yaxis = list(title = list(text = "Initial benefit of group 2",
-                                  standoff = 5),
-                     type = "log",
-                     showgrid = FALSE,
-                     range= log(c(min(df$benefitMultiplier),
-                                  max(df$benefitMultiplier)),10),
-                     titlefont = axisFont,
-                     tickfont = list(size = 12),
-                     ticks    = "outside",
-                     ticklen  = 8,
-                     showline = TRUE, mirror = TRUE, zeroline = FALSE
-        ),
-        margin = list(t = 50, b=40),
-        showlegend = F
-      )
-    p
-  }
-  save_image(p,paste0(exportPath,"SIPContourPreMitigate",nb1,nb2,".pdf"),
-            width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"SIPContourPreMitigate",nb1,nb2,".pdf"))
-}
-
-
 ####### Example pool post mitigation SIP only #######
 #dimensions as percentage of page
 w <- .7    #width
@@ -3725,11 +3731,20 @@ benefit2 <- 500
         inherit = FALSE
       ) %>%
       add_trace(
-        x = c(age2, age2),
-        y = c(currentY, newY),
+        x = c(age2),
+        y = c(currentY),
         type = "scatter",
         mode = "markers",
         marker = list(color = "blue", size = 7, symbol = "circle"),
+        name = "Current point",
+        inherit = FALSE
+      )%>%
+      add_trace(
+        x = c(age2),
+        y = c(newY),
+        type = "scatter",
+        mode = "markers",
+        marker = list(color = "green", size = 7, symbol = "circle"),
         name = "Current point",
         inherit = FALSE
       ) %>%
@@ -3985,14 +4000,41 @@ alpha <- 2 #risk aversion level
         name = paste0("Group 1's benchmark indifference curve")
       )
       
+      #annotations
+      p <- p%>%add_annotations(
+        x = baseCase[1],
+        y = baseCase[2],
+        text = "Natural pricing",
+        xref = "x",
+        yref = "y",
+        showarrow = TRUE,
+        arrowhead = 1,
+        arrowwidth = 1.5,
+        ax = -10,
+        ay = -40,
+        font = list(color = "red")
+      )%>%add_annotations(
+        x = grid1$smoothyX[goodId],
+        y = grid1$y[goodId],
+        text = "E.g. good pricing",
+        xref = "x",
+        yref = "y",
+        showarrow = TRUE,
+        arrowhead = 1,
+        arrowwidth = 1.5,
+        ax = -10,
+        ay = -40,
+        font = list(color = "green")
+      )
+      
       p <- add_trace(
         p,
-        x = (grid1$smoothyX[noGoodIndex1])[seq(1,length(noGoodIndex1),5)], #only take some of them for plot visibility
-        y = (grid1$y[noGoodIndex1])[seq(1,length(noGoodIndex1),5)],
+        x = (grid1$smoothyX[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)], #only take some of them for plot visibility
+        y = (grid1$y[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)],
         type = 'scatter',
         mode = 'markers',
         marker = list(color = "red",
-                      symbol = "line-nw-open", size = 7),
+                      symbol = "line-ne-open", size = 7),
         name = paste0("no no region group 1")
       )%>%add_trace(
         x = (grid1$smoothyX[noGoodIndex2])[seq(1,length(noGoodIndex2),10)], #only take some of them for plot visibility
@@ -4000,33 +4042,8 @@ alpha <- 2 #risk aversion level
         type = 'scatter',
         mode = 'markers',
         marker = list(color = "red",
-                      symbol = "line-ne-open", size = 7),
+                      symbol = "line-nw-open", size = 7),
         name = paste0("no no region group 2")
-      )
-      
-      #annotations
-      p <- p%>%add_annotations(
-        x = baseCase[1],
-        y = baseCase[2],
-        text = "No rebalance",
-        xref = "x",
-        yref = "y",
-        showarrow = TRUE,
-        arrowhead = 6,
-        ax = -10,
-        ay = -40,
-        font = list(color = "red")
-      )%>%add_annotations(
-        x = grid1$smoothyX[goodId],
-        y = grid1$y[goodId],
-        text = "Example rebalance",
-        xref = "x",
-        yref = "y",
-        showarrow = TRUE,
-        arrowhead = 6,
-        ax = -10,
-        ay = -40,
-        font = list(color = "green")
       )
       
       
@@ -4042,7 +4059,7 @@ alpha <- 2 #risk aversion level
                      ticks    = "outside",
                      ticklen  = 8,
                      showline = TRUE, mirror = TRUE, zeroline = FALSE),
-        yaxis = list(title = list(text = "Initial benefit return"),
+        yaxis = list(title = list(text = "Initial yield"),
                      range = c(range(c(grid1$y,grid2$y))+c(-.01,.05)),
                      titlefont = axisFont,
                      tickfont = list(size = 12),
@@ -4133,6 +4150,32 @@ alpha <- 2 #risk aversion level
         name = paste0("Group 2's benchmark indifference curve")
       )
       
+      p <- p%>%add_annotations(
+        x = baseCase[3],
+        y = baseCase[4],
+        text = "Natural pricing",
+        xref = "x",
+        yref = "y",
+        showarrow = TRUE,
+        arrowhead = 1,
+        arrowwidth = 1.5,
+        ax = -10,
+        ay = -40,
+        font = list(color = "red")
+      )%>%add_annotations(
+        x = grid2$smoothyX[goodId],
+        y = grid2$y[goodId],
+        text = "E.g. good pricing",
+        xref = "x",
+        yref = "y",
+        showarrow = TRUE,
+        arrowhead = 1,
+        arrowwidth = 1.5,
+        ax = -10,
+        ay = -30,
+        font = list(color = "green")
+      )
+      
       p <- add_trace(
         p,
         x = (grid2$smoothyX[noGoodIndex2])[seq(1,length(noGoodIndex2),10)], #only take some of them for plot visibility
@@ -4143,37 +4186,13 @@ alpha <- 2 #risk aversion level
                       symbol = "line-nw-open", size = 7),
         name = paste0("no no region group 2")
       )%>%add_trace(
-        x = (grid2$smoothyX[noGoodIndex1])[seq(1,length(noGoodIndex1),5)], #only take some of them for plot visibility
-        y = (grid2$y[noGoodIndex1])[seq(1,length(noGoodIndex1),5)],
+        x = (grid2$smoothyX[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)], #only take some of them for plot visibility
+        y = (grid2$y[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)],
         type = 'scatter',
         mode = 'markers',
         marker = list(color = "red",
                       symbol = "line-ne-open", size = 7),
         name = paste0("no no region group 1"))
-      
-      p <- p%>%add_annotations(
-        x = baseCase[3],
-        y = baseCase[4],
-        text = "No rebalance",
-        xref = "x",
-        yref = "y",
-        showarrow = TRUE,
-        arrowhead = 6,
-        ax = -10,
-        ay = -40,
-        font = list(color = "red")
-      )%>%add_annotations(
-        x = grid2$smoothyX[goodId],
-        y = grid2$y[goodId],
-        text = "Example rebalance",
-        xref = "x",
-        yref = "y",
-        showarrow = TRUE,
-        arrowhead = 6,
-        ax = -10,
-        ay = -40,
-        font = list(color = "green")
-      )
       
       # Final layout
       p <- layout(
@@ -4187,7 +4206,7 @@ alpha <- 2 #risk aversion level
                      ticks    = "outside",
                      ticklen  = 8,
                      showline = TRUE, mirror = TRUE, zeroline = FALSE),
-        yaxis = list(title = list(text = "Initial benefit return"),
+        yaxis = list(title = list(text = "Initial yield"),
                      range = c(range(c(grid1$y,grid2$y))+c(-.01,.05)),
                      titlefont = axisFont,
                      tickfont = list(size = 12),
@@ -4531,14 +4550,29 @@ alpha <- 2 #risk aversion level
         name = paste0("Group 1's benchmark indifference curve")
       )
       
+      #annotations
+      p <- p%>%add_annotations(
+        x = baseCase[1],
+        y = baseCase[2],
+        text = "Natural pricing",
+        xref = "x",
+        yref = "y",
+        showarrow = TRUE,
+        arrowhead = 1,
+        arrowwidth = 1.5,
+        ax = -10,
+        ay = -40,
+        font = list(color = "red")
+      )
+      
       p <- add_trace(
         p,
-        x = (grid1$smoothyX[noGoodIndex1])[seq(1,length(noGoodIndex1),5)], #only take some of them for plot visibility
-        y = (grid1$y[noGoodIndex1])[seq(1,length(noGoodIndex1),5)],
+        x = (grid1$smoothyX[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)], #only take some of them for plot visibility
+        y = (grid1$y[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)],
         type = 'scatter',
         mode = 'markers',
         marker = list(color = "red",
-                      symbol = "line-nw-open", size = 7),
+                      symbol = "line-ne-open", size = 7),
         name = paste0("no no region group 1")
       )%>%add_trace(
         x = (grid1$smoothyX[noGoodIndex2])[seq(1,length(noGoodIndex2),10)], #only take some of them for plot visibility
@@ -4546,22 +4580,8 @@ alpha <- 2 #risk aversion level
         type = 'scatter',
         mode = 'markers',
         marker = list(color = "red",
-                      symbol = "line-ne-open", size = 7),
+                      symbol = "line-nw-open", size = 7),
         name = paste0("no no region group 2")
-      )
-      
-      #annotations
-      p <- p%>%add_annotations(
-        x = baseCase[1],
-        y = baseCase[2],
-        text = "No rebalance",
-        xref = "x",
-        yref = "y",
-        showarrow = TRUE,
-        arrowhead = 6,
-        ax = -10,
-        ay = -40,
-        font = list(color = "red")
       )
       
       
@@ -4571,13 +4591,13 @@ alpha <- 2 #risk aversion level
         font = list(family = fontType),
         xaxis = list(title = list(text = "SIP",
                                   standoff = 5),
-                     range = c(range(c(grid1$smoothyX,grid2$smoothyX))*c(.9,1.05)),
+                     range = c(range(c(grid1$smoothyX,grid2$smoothyX))*c(.97,1.005)),
                      titlefont = axisFont,
                      tickfont = list(size = 12),
                      ticks    = "outside",
                      ticklen  = 8,
                      showline = TRUE, mirror = TRUE, zeroline = FALSE),
-        yaxis = list(title = list(text = "Initial benefit return"),
+        yaxis = list(title = list(text = "Initial yield"),
                      range = c(range(c(grid1$y,grid2$y))+c(-.01,.05)),
                      titlefont = axisFont,
                      tickfont = list(size = 12),
@@ -4668,6 +4688,20 @@ alpha <- 2 #risk aversion level
         name = paste0("Group 2's benchmark indifference curve")
       )
       
+      p <- p%>%add_annotations(
+        x = baseCase[3],
+        y = baseCase[4],
+        text = "Natural pricing",
+        xref = "x",
+        yref = "y",
+        showarrow = TRUE,
+        arrowhead = 1,
+        arrowwidth = 1.5,
+        ax = -10,
+        ay = -40,
+        font = list(color = "red")
+      )
+      
       p <- add_trace(
         p,
         x = (grid2$smoothyX[noGoodIndex2])[seq(1,length(noGoodIndex2),10)], #only take some of them for plot visibility
@@ -4678,26 +4712,13 @@ alpha <- 2 #risk aversion level
                       symbol = "line-nw-open", size = 7),
         name = paste0("no no region group 2")
       )%>%add_trace(
-        x = (grid2$smoothyX[noGoodIndex1])[seq(1,length(noGoodIndex1),5)], #only take some of them for plot visibility
-        y = (grid2$y[noGoodIndex1])[seq(1,length(noGoodIndex1),5)],
+        x = (grid2$smoothyX[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)], #only take some of them for plot visibility
+        y = (grid2$y[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)],
         type = 'scatter',
         mode = 'markers',
         marker = list(color = "red",
                       symbol = "line-ne-open", size = 7),
         name = paste0("no no region group 1"))
-      
-      p <- p%>%add_annotations(
-        x = baseCase[3],
-        y = baseCase[4],
-        text = "No rebalance",
-        xref = "x",
-        yref = "y",
-        showarrow = TRUE,
-        arrowhead = 6,
-        ax = -10,
-        ay = -40,
-        font = list(color = "red")
-      )
       
       # Final layout
       p <- layout(
@@ -4705,13 +4726,13 @@ alpha <- 2 #risk aversion level
         font = list(family = fontType),
         xaxis = list(title = list(text = "SIP",
                                   standoff = 5),
-                     range = c(range(c(grid1$smoothyX,grid2$smoothyX))*c(.9,1.05)),
+                     range = c(range(c(grid1$smoothyX,grid2$smoothyX))*c(.97,1.005)),
                      titlefont = axisFont,
                      tickfont = list(size = 12),
                      ticks    = "outside",
                      ticklen  = 8,
                      showline = TRUE, mirror = TRUE, zeroline = FALSE),
-        yaxis = list(title = list(text = "Initial benefit return"),
+        yaxis = list(title = list(text = "Initial yield"),
                      range = c(range(c(grid1$y,grid2$y))+c(-.01,.05)),
                      titlefont = axisFont,
                      tickfont = list(size = 12),
@@ -4854,9 +4875,9 @@ h <- .25  #height
       )
     p
   }
-  save_image(p,paste0(exportPath,"riskySIPContourPreMitigate",nb1,nb2,".pdf"),
+  save_image(p,paste0(exportPath,"SIPContourRiskyPostUtilReallocation",nb1,nb2,".pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"riskySIPContourPreMitigate",nb1,nb2,".pdf"))
+  browseURL(paste0(exportPath,"SIPContourRiskyPostUtilReallocation",nb1,nb2,".pdf"))
 }
 
 
@@ -5282,12 +5303,12 @@ alpha <- 2 #risk aversion level
       
       p <- add_trace(
         p,
-        x = (grid1$smoothyX[noGoodIndex1])[seq(1,length(noGoodIndex1),5)], #only take some of them for plot visibility
-        y = (grid1$y[noGoodIndex1])[seq(1,length(noGoodIndex1),5)],
+        x = (grid1$smoothyX[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)], #only take some of them for plot visibility
+        y = (grid1$y[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)],
         type = 'scatter',
         mode = 'markers',
         marker = list(color = "red",
-                      symbol = "line-nw-open", size = 7),
+                      symbol = "line-ne-open", size = 7),
         name = paste0("no no region group 1")
       )%>%add_trace(
         x = (grid1$smoothyX[noGoodIndex2])[seq(1,length(noGoodIndex2),10)], #only take some of them for plot visibility
@@ -5295,7 +5316,7 @@ alpha <- 2 #risk aversion level
         type = 'scatter',
         mode = 'markers',
         marker = list(color = "red",
-                      symbol = "line-ne-open", size = 7),
+                      symbol = "line-nw-open", size = 7),
         name = paste0("no no region group 2")
       )
       
@@ -5303,22 +5324,24 @@ alpha <- 2 #risk aversion level
       p <- p%>%add_annotations(
         x = baseCase[1],
         y = baseCase[2],
-        text = "No rebalance",
+        text = "Natural pricing",
         xref = "x",
         yref = "y",
         showarrow = TRUE,
-        arrowhead = 6,
+        arrowhead = 1,
+        arrowwidth = 1.5,
         ax = -10,
         ay = -40,
         font = list(color = "red")
       )%>%add_annotations(
         x = grid1$smoothyX[goodId],
         y = grid1$y[goodId],
-        text = "Example rebalance",
+        text = "E.g. good pricing",
         xref = "x",
         yref = "y",
         showarrow = TRUE,
-        arrowhead = 6,
+        arrowhead = 1,
+        arrowwidth = 1.5,
         ax = -10,
         ay = -40,
         font = list(color = "green")
@@ -5337,7 +5360,7 @@ alpha <- 2 #risk aversion level
                      ticks    = "outside",
                      ticklen  = 8,
                      showline = TRUE, mirror = TRUE, zeroline = FALSE),
-        yaxis = list(title = list(text = "Initial benefit return"),
+        yaxis = list(title = list(text = "Initial yield"),
                      range = c(range(c(grid1$y,grid2$y))+c(-.01,.05)),
                      titlefont = axisFont,
                      tickfont = list(size = 12),
@@ -5438,8 +5461,8 @@ alpha <- 2 #risk aversion level
                       symbol = "line-nw-open", size = 7),
         name = paste0("no no region group 2")
       )%>%add_trace(
-        x = (grid2$smoothyX[noGoodIndex1])[seq(1,length(noGoodIndex1),5)], #only take some of them for plot visibility
-        y = (grid2$y[noGoodIndex1])[seq(1,length(noGoodIndex1),5)],
+        x = (grid2$smoothyX[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)], #only take some of them for plot visibility
+        y = (grid2$y[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)],
         type = 'scatter',
         mode = 'markers',
         marker = list(color = "red",
@@ -5449,22 +5472,24 @@ alpha <- 2 #risk aversion level
       p <- p%>%add_annotations(
         x = baseCase[3],
         y = baseCase[4],
-        text = "No rebalance",
+        text = "Natural pricing",
         xref = "x",
         yref = "y",
         showarrow = TRUE,
-        arrowhead = 6,
+        arrowhead = 1,
+        arrowwidth = 1.5,
         ax = -10,
         ay = -40,
         font = list(color = "red")
       )%>%add_annotations(
         x = grid2$smoothyX[goodId],
         y = grid2$y[goodId],
-        text = "Example rebalance",
+        text = "E.g. good pricing",
         xref = "x",
         yref = "y",
         showarrow = TRUE,
-        arrowhead = 6,
+        arrowhead = 1,
+        arrowwidth = 1.5,
         ax = -10,
         ay = -30,
         font = list(color = "green")
@@ -5482,7 +5507,7 @@ alpha <- 2 #risk aversion level
                      ticks    = "outside",
                      ticklen  = 8,
                      showline = TRUE, mirror = TRUE, zeroline = FALSE),
-        yaxis = list(title = list(text = "Initial benefit return"),
+        yaxis = list(title = list(text = "Initial yield"),
                      range = c(range(c(grid1$y,grid2$y))+c(-.01,.05)),
                      titlefont = axisFont,
                      tickfont = list(size = 12),
