@@ -1447,7 +1447,7 @@ beta <- .95       #treshhold illustrated in plot
 
 ##preparing data
 {
-  set.seed(1)
+  set.seed(7)
   {
     age1 <- 65
     benefit1 <- 1000
@@ -1463,7 +1463,7 @@ beta <- .95       #treshhold illustrated in plot
                                                      asset2))
     
     cumulDist <- ecdf(Stability)
-    discreteVaR <- min(which(cumulDist(1:30)>(1-beta)))
+    discreteVaR <- max(which(cumulDist(1:30)<=(1-beta)))
     
     p <- (1-beta)
     x <- sort(Stability)
@@ -1504,11 +1504,11 @@ beta <- .95       #treshhold illustrated in plot
   {
     fig <- plot_ly()
     fig <- fig %>%
-      add_trace(x = x_segments, y = y_segments, type = 'scatter', mode = 'lines',
+      add_trace(x = x_segments, y = 1-y_segments, type = 'scatter', mode = 'lines',
                 line = list(color = "#010101", shape = "hv"),
-                name = "ECDF")%>%
+                name = TeX("$P_n(\\epsilon_1,\\epsilon_2)$"))%>%
       # Add points at the jumps
-      add_trace(x = x_jumps, y = y_jumps,
+      add_trace(x = x_jumps, y = 1-y_jumps,
                 type = 'scatter', mode = 'markers',
                 marker = list(color = "#010101", size = 6),
                 name = "ECDF points",
@@ -1517,63 +1517,64 @@ beta <- .95       #treshhold illustrated in plot
     # Vertical dashed line at discreteVaR
     fig <- fig %>%
       add_trace(x = c(discreteVaR, discreteVaR),
-                y = c(cumulDist(discreteVaR), -1),
+                y = c(1-cumulDist(discreteVaR), -1),
                 type = 'scatter', mode = 'lines',
                 line = list(color = "#77C4D5", dash = "dash"),
-                name = "5th percentile ECDF"
+                name = "SIP 95% using discrete probabilities"
       )
     
     # Continuous greenish line
     fig <- fig %>%
-      add_trace(x = c(y, 34), y = cumul,
+      add_trace(x = 1:(max(y)+1), y = c(rep(1,max(y)-length(cumul)+1),1-cumul),
                 type = 'scatter', mode = 'lines',
                 line = list(color = "#BABF33", shape = "linear"),
-                name = "Smoothed ECDF")
+                name = TeX("$\\text{Smoothed }P_n(\\epsilon_1,\\epsilon_2)$"))
     
     # Horizontal dashed line
     fig <- fig %>%
-      add_trace(x = c(0, max(Stability)), y = c(p, p),
+      add_trace(x = c(0, max(Stability)), y = 1-c(p, p),
                 type = 'scatter', mode = 'lines',
                 line = list(color = "#010101", dash = "dash"),
-                name = "5th percentile",
+                name = "95th percentile",
                 showlegend = F)
     
     # Vertical dashed line at VaR
     fig <- fig %>%
-      add_trace(x = c(VaR, VaR), y = c(0.05, -1),
+      add_trace(x = c(VaR, VaR), y = c(1-0.05, -1),
                 type = 'scatter', mode = 'lines',
                 line = list(color = "#FDCE07", dash = "dash"),
-                name = "5th percentile smoothed ECDF"
+                name = "SIP 95% using smoothed probabilities"
                 )
     fig <- layout(
       fig,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Years",
+      xaxis = list(title = list(text = "n",
                                 standoff = 5),
                    range = c(4, 14),
                    titlefont = axisFont,
                    tickfont = list(size = 12),
                    ticks    = "outside",
                    ticklen  = 8,
+                   nticks=11,
                    showline = TRUE, mirror = TRUE, zeroline = FALSE),
-      yaxis = list(title = list(text = "Distribution of the number of years"),
-                   range = c(0, 0.1),
+      yaxis = list(title = list(text = "Probability of stable adjustments"),
+                   range = rev(1-c(0, 0.1)),
                    titlefont = axisFont,
                    tickfont = list(size = 12),
                    ticks    = "outside",
                    ticklen  = 8,
                    showline = TRUE, mirror = TRUE, zeroline = FALSE),
-      legend = list(x = 0.02, y = .98,
+      legend = list(x = 0.02, y = .02,
                     xanchor = "left",
-                    yanchor = "top",
+                    yanchor = "bot",
                     font = legendFont,
                     bordercolor = "black", # Set the legend border color
                     borderwidth = 1,
                     bgcolor = "rgba(255, 255, 255, 0.9)"),
       margin = list(t = 30, b=40)
-    )
+    )%>%config(mathjax = 'cdn')
     fig
-  } 
+  }
   save_image(fig,paste0(exportPath,"smoothedVSempericalSIP.pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
   browseURL(paste0(exportPath,"smoothedVSempericalSIP.pdf"))
