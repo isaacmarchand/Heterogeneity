@@ -5,6 +5,7 @@ library(reticulate)
 library(ggplot2)
 library(htmlwidgets)
 library(webshot)
+library(mgcv)
 reticulate::use_python("/opt/anaconda3/bin/python3")
 
 # ####if need to install python
@@ -14,7 +15,7 @@ reticulate::use_python("/opt/anaconda3/bin/python3")
 # py_install(c("kaleido==0.2.1", "plotly"))
 
 ###### Design and export choice ####
-exportPath <- "/Users/macbook/Library/Mobile\ Documents/com~apple~CloudDocs/School/SFU/Research/Coding/Plots/November4th/"
+exportPath <- "/Users/macbook/Library/Mobile\ Documents/com~apple~CloudDocs/School/SFU/Research/Coding/Plots/November27th/"
 fontType <- 'Verdana' #'Verdana' for report 'Times New Roman' for paper
 axisFont <- list(size=15, family = fontType)
 titleFont <- list(size=30, family = fontType)
@@ -1471,9 +1472,9 @@ beta <- .95       #treshhold illustrated in plot
     Ly <- length(y)
     z <- sapply(1:Ly,function(i) sum(y[i]==x))/length(x)
     zModified <- c(z[1]/2,(z[2:Ly]+z[1:(Ly-1)])/2, z[Ly]/2)
-    cumul <- cumsum(zModified)
+    cumul <- cumsum(z)
     i <- min(which(cumul>=p))
-    pStar <- (p - (cumul[i] - zModified[i]))/zModified[i]
+    pStar <- (p - (cumul[i] - z[i]))/z[i]
     if(i == 1){
       VaR <- y[1]
     }else if (i==(Ly+1)) {
@@ -1506,7 +1507,7 @@ beta <- .95       #treshhold illustrated in plot
     fig <- fig %>%
       add_trace(x = x_segments, y = 1-y_segments, type = 'scatter', mode = 'lines',
                 line = list(color = "#010101", shape = "hv"),
-                name = TeX("$P_n(\\epsilon_1,\\epsilon_2)$"))%>%
+                name = "Non-smoothed probability")%>%
       # Add points at the jumps
       add_trace(x = x_jumps, y = 1-y_jumps,
                 type = 'scatter', mode = 'markers',
@@ -1514,21 +1515,21 @@ beta <- .95       #treshhold illustrated in plot
                 name = "ECDF points",
                 showlegend = F)
     
+    # Continuous greenish line
+    fig <- fig %>%
+      add_trace(x = 1:(max(y)), y = c(rep(1,max(y)-length(cumul)),1-cumul),
+                type = 'scatter', mode = 'lines',
+                line = list(color = "#BABF33", shape = "linear"),
+                name = "Smoothed probability")
+    
     # Vertical dashed line at discreteVaR
     fig <- fig %>%
       add_trace(x = c(discreteVaR, discreteVaR),
                 y = c(1-cumulDist(discreteVaR), -1),
                 type = 'scatter', mode = 'lines',
                 line = list(color = "#77C4D5", dash = "dash"),
-                name = "SIP 95% using discrete probabilities"
+                name = "SIP using non-smoothed probability"
       )
-    
-    # Continuous greenish line
-    fig <- fig %>%
-      add_trace(x = 1:(max(y)+1), y = c(rep(1,max(y)-length(cumul)+1),1-cumul),
-                type = 'scatter', mode = 'lines',
-                line = list(color = "#BABF33", shape = "linear"),
-                name = TeX("$\\text{Smoothed }P_n(\\epsilon_1,\\epsilon_2)$"))
     
     # Horizontal dashed line
     fig <- fig %>%
@@ -1543,12 +1544,12 @@ beta <- .95       #treshhold illustrated in plot
       add_trace(x = c(VaR, VaR), y = c(1-0.05, -1),
                 type = 'scatter', mode = 'lines',
                 line = list(color = "#FDCE07", dash = "dash"),
-                name = "SIP 95% using smoothed probabilities"
+                name = "SIP using smoothed probability"
                 )
     fig <- layout(
       fig,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "n",
+      xaxis = list(title = list(text = "Horizon <i>n</i>",
                                 standoff = 5),
                    range = c(4, 14),
                    titlefont = axisFont,
@@ -4054,7 +4055,7 @@ alpha <- 2 #risk aversion level
         font = list(family = fontType),
         xaxis = list(title = list(text = "SIP",
                                   standoff = 5),
-                     range = c(range(c(grid1$smoothyX,grid2$smoothyX))*c(.9,1.05)),
+                     range = c(range(c(grid1$smoothyX,grid2$smoothyX))*c(.85,1.05)),
                      titlefont = axisFont,
                      tickfont = list(size = 12),
                      ticks    = "outside",
@@ -4201,7 +4202,7 @@ alpha <- 2 #risk aversion level
         font = list(family = fontType),
         xaxis = list(title = list(text = "SIP",
                                   standoff = 5),
-                     range = c(range(c(grid1$smoothyX,grid2$smoothyX))*c(.9,1.05)),
+                     range = c(range(c(grid1$smoothyX,grid2$smoothyX))*c(.85,1.05)),
                      titlefont = axisFont,
                      tickfont = list(size = 12),
                      ticks    = "outside",
