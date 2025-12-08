@@ -1557,7 +1557,7 @@ h <- .3  #height
 
 # adjustable parameters
 nb1 = seq(0,100)
-BMulti <- c(.1,.2,1,5,10) #ratio of benefit2/benefit1
+BMulti <- c(.1,.2,1,5,10) #.1,.2,.5,1,2,5,10 Possible
 
 age = 65
 nb2 <- rev(nb1)
@@ -1569,7 +1569,7 @@ nb2 <- rev(nb1)
   {
     riskStability <- matrix(0, length(BMulti), length(nb2))
     for (i in seq_along(BMulti)) {
-      name <- paste("simulatedData/ControlledSIP_ParrallelComputingHeteWealth",BMulti[i],"Tot.rds", sep = "")
+      name <- paste("simulatedData/archive/ControlledSIP_ParrallelComputingHeteWealth",BMulti[i],"Tot.rds", sep = "")
       riskStability[i,] <- 1+readRDS(name)
     }
   }
@@ -1650,9 +1650,9 @@ nb2 <- rev(nb1)
   # compute  stability surface
   # Import Data
   {
-    riskStability <- matrix(0, length(BMulti), length(nb2))
-    for (i in seq_along(BMulti)) {
-      name <- paste("simulatedData/ControlledSIP_ParrallelComputingHeteMortality",ages[i],"Tot.rds", sep = "")
+    riskStability <- matrix(0, length(ages), length(nb2))
+    for (i in seq_along(ages)) {
+      name <- paste("simulatedData/archive/ControlledSIP_ParrallelComputingHeteMortality",ages[i],"Tot.rds", sep = "")
       riskStability[i,] <- 1+readRDS(name)
     }
   }
@@ -2086,6 +2086,8 @@ age1 <- 65        #only 60, 65 and 70 available
 benefit1 <- 100
 age2 <- 73
 benefit2 <- 500
+b1 = 10
+b2 = 10
 
 
 {
