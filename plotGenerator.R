@@ -15,7 +15,8 @@ reticulate::use_python("/opt/anaconda3/bin/python3")
 # py_install(c("kaleido==0.2.1", "plotly"))
 
 ###### Design and export choice ####
-exportPath <- "/Users/macbook/Library/Mobile\ Documents/com~apple~CloudDocs/School/SFU/Research/Coding/Plots/December10th/"
+exportPath <- paste0("/Users/macbook/Library/Mobile\ Documents/com~apple~CloudDocs/School/SFU/Research/Coding/Plots/",
+                     "December24th/")
 fontType <- 'Verdana' #'Verdana' for report 'Times New Roman' for paper
 axisFont <- list(size=15, family = fontType)
 titleFont <- list(size=30, family = fontType)
@@ -206,8 +207,8 @@ pixelsFullHeight <- 1754*(9.3/11) #removing margins
   }
   
   #Quadratic Utility
-  utilityFn <- function(SIP,initialBen, alpha = 2){
-    initialBen-.5*alpha*SIP^-2
+  utilityFn <- function(SIP,initialYield, alpha = 2){
+    initialYield-.5*alpha*SIP^-2
   }
   
   utilityCurve <- function(utility,SIP, alpha = 2){
@@ -1887,9 +1888,9 @@ b2=10
       )
     p
   }
-  save_image(p,paste0(exportPath,"ApproxSIPContour1Perspective",nb1,nb2,".pdf"),
+  save_image(p,paste0(exportPath,"ApproxSIPContour1Perspective",nb1,nb2,"_b",b1,b2,".pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"ApproxSIPContour1Perspective",nb1,nb2,".pdf"))
+  browseURL(paste0(exportPath,"ApproxSIPContour1Perspective",nb1,nb2,"_b",b1,b2,".pdf"))
 }
 ####### Fig 15:Approx SIP Contour Plot Both Groups' Perspective ########
 #dimensions as percentage of page
@@ -1902,7 +1903,7 @@ nb2 <- 100     # 50, 100 and 200 to match section 3.
 age1 <- 65 
 nb1 <- 100 
 b1=10
-b2=10
+b2=14
 
 
 {
@@ -2066,9 +2067,529 @@ b2=10
       )
     p
   }
-  save_image(p,paste0(exportPath,"ApproxSIPContour2Perspective",nb1,nb2,".pdf"),
+  save_image(p,paste0(exportPath,"ApproxSIPContour2Perspective",nb1,nb2,"_b",b1,b2,".pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"ApproxSIPContour2Perspective",nb1,nb2,".pdf"))
+  browseURL(paste0(exportPath,"ApproxSIPContour2Perspective",nb1,nb2,"_b",b1,b2,".pdf"))
+}
+
+
+####### Other:Approx SIP Heterogeneous Mortality evolution with nb2 ########
+#dimensions as percentage of page
+w <- .8    #width
+h <- .3   #height
+
+
+# adjustable parameters
+nb2 <- seq(1,1000)     # only option
+age2 <- c(55,60,65,70,75)   # only 55, 60, 65, 70 and 75 available
+
+# not adjustable (for now)
+nb1 = 100
+age1 = 65
+b1 = 10
+b2 = 10
+
+# Generate plot (put it in full screen before saving for better placement of legend)
+{
+  {
+    # compute  stability surface
+    benefit1 <- 1000
+    benefit2 <- benefit1
+    riskStability <- matrix(0,length(age2),length(nb2))
+    tic()
+    for (i in seq_along(age2)) {
+      riskStability[i,] <- sapply(nb2,function(n)compApproxSIP(nb1, n, age1, age2[i],
+                                                               benefit1,benefit2, 
+                                                               b1=b1, b2=b2))
+      sdProxy <- sapply(nb2, function(n) SD1Periode(age1, benefit1, nb1,
+                                                    age2[i], benefit1, nb2 = n,
+                                                    b1 = b1, b2 = b2))
+      grid <- expand.grid(nb2 = nb2)
+      grid$sdProxy <- as.vector(sdProxy)
+      grid$SIP <- as.vector(riskStability[i,])
+      
+      ### fit model
+      gam_fit <- gam(SIP ~ te(nb2,sdProxy, k=10), data = grid)
+      summary(gam_fit)
+      
+      grid$SIP_smooth <- predict(gam_fit, newdata = grid)
+      
+      riskStability[i,] <- grid$SIP_smooth
+    }
+    toc()
+  }
+  #plot
+  {
+    colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
+    colors <- rep(colors, length.out = nrow(riskStability))  # ensure enough colors
+    
+    p <- plot_ly() 
+    
+    # Add each column of slices as a separate trace
+    for (i in 1:nrow(riskStability)) {
+      p <- add_trace(
+        p,
+        x = nb2,
+        y = riskStability[i,],
+        type = 'scatter',
+        mode = 'lines',
+        line = list(color = colors[i]),
+        name = paste0("Age:", age2[i])
+      )
+    }
+    
+    # Final layout
+    p <- layout(
+      p,
+      font = list(family = fontType),
+      xaxis = list(title = list(text = "Number of members in group 2",
+                                standoff = 5),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      yaxis = list(title = list(text = "Stable income period"),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   range = c(13,38),
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      legend = list(x = 0.02, y = .98,
+                    xanchor = "left",
+                    yanchor = "top",
+                    font = legendFont,
+                    bordercolor = "black", # Set the legend border color
+                    borderwidth = 1,
+                    bgcolor = "rgba(255, 255, 255, 0.9)"),
+      margin = list(t = 30, b=40)
+    )
+    p
+  }
+  save_image(p,paste0(exportPath,"SIPMortalityHeteNb_b",b1,b2,".pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SIPMortalityHeteNb_b",b1,b2,".pdf"))
+}
+
+
+
+####### Other:Approx SIP Heterogeneous Wealth evolution with nb2 ########
+#dimensions as percentage of page
+w <- .8    #width
+h <- .3  #height
+
+# adjustable parameters
+nb2 <- seq(1,500)     # only option
+BMulti <- c(.2,.5,1,2,5) #ratio of benefit2/benefit1
+
+# not adjustable (for now)
+nb1 = 100
+age1 = 65
+age2 = 65
+b1 = 10
+b2 = 14
+
+# Generate plot (put it in full screen before saving for better placement of legend)
+{
+  
+  # compute  stability surface
+  {
+    # compute  stability surface
+    riskStability <- matrix(0,length(BMulti),length(nb2))
+    tic()
+    for (i in seq_along(BMulti)) {
+      riskStability[i,] <- sapply(nb2,function(n)compApproxSIP(nb1, n, age1, age2,
+                                                               1,BMulti[i], 
+                                                               b1=b1, b2=b2))
+      sdProxy <- sapply(nb2, function(n) SD1Periode(age1, 1, nb1,
+                                                    age2, BMulti[i], nb2 = n,
+                                                    b1 = b1, b2 = b2))
+      grid <- expand.grid(nb2 = nb2)
+      grid$sdProxy <- as.vector(sdProxy)
+      grid$SIP <- as.vector(riskStability[i,])
+      
+      ### fit model
+      gam_fit <- gam(SIP ~ te(nb2,sdProxy, k=10), data = grid)
+      summary(gam_fit)
+      
+      grid$SIP_smooth <- predict(gam_fit, newdata = grid)
+      
+      riskStability[i,] <- grid$SIP_smooth
+    }
+    toc()
+  }
+  
+  #plot
+  {
+    colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
+    colors <- rep(colors, length.out = nrow(riskStability))  # ensure enough colors
+    
+    p <- plot_ly() 
+    
+    # Add each column of slices as a separate trace
+    for (i in 1:nrow(riskStability)) {
+      p <- add_trace(
+        p,
+        x = nb2,
+        y = riskStability[i,],
+        type = 'scatter',
+        mode = 'lines',
+        line = list(color = colors[i]),
+        name = paste0("<i>y</i> = ", BMulti[i])
+      )
+    }
+    
+    # Final layout
+    p <- layout(
+      p,
+      font = list(family = fontType),
+      xaxis = list(title = list(text = "Number of members in group 2",
+                                standoff = 5),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      yaxis = list(title = list(text = "Stable income period"),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   range = c(10,26),
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      legend = list(x = 0.02, y = .98,
+                    xanchor = "left",
+                    yanchor = "top",
+                    font = legendFont,
+                    bordercolor = "black", # Set the legend border color
+                    borderwidth = 1,
+                    bgcolor = "rgba(255, 255, 255, 0.9)"),
+      margin = list(t = 30, b=40)
+    )
+    p
+  }
+  save_image(p,paste0(exportPath,"SIPWealthHeteNb_b",b1,b2,".pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SIPWealthHeteNb_b",b1,b2,".pdf"))
+}
+
+
+
+
+
+####### Other:Approx SIP 2D Plot Wealth/Mortality Heterogeneity ########
+#dimensions as percentage of page
+w <- .8    #width
+h <- .3  #height
+
+# adjustable parameters
+nb2 <- 100      # 50, 100 and 200 available for all age1. 
+age2 <- c(60,65,70) # Any amount of value from interval [55,75]
+diffWealth <- c(.2, .5, 1, 2, 5) # Any amount of value from interval [.1,10], Benefit of group 2 compared to group 1
+
+
+# not adjustable (for now)
+age1 <- 65 
+nb1 <- 100 
+b1=10
+b2=14
+
+# Generate plot (put it in full screen before saving for better placement of legend)
+{
+  {
+    tic()
+    benefit1 <- 1000
+    age2vec <- seq(55, 75, by = .1)
+    benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 101))
+    benefit2 <- benefit1*benefitMultiplier
+    SIP_Approx <- matrix(0,length(age2vec),length(benefitMultiplier))
+    for (i in seq_along(age2vec)) {
+      for (j in seq_along(benefit2)) {
+        SIP_Approx[i,j] <- compApproxSIP(nb1, nb2, age1, age2vec[i], 
+                                         benefit1,benefit2[j],
+                                         b1 = b1, b2=b2)
+      }
+    }
+    toc()
+    
+    # SD surface for smoothing purposes
+    {
+      sdProxy <- matrix(0, length(age2vec), length(benefitMultiplier))
+      for (i in seq_along(age2vec)) {
+        sdProxy[i,] <- sapply(benefitMultiplier,
+                              function(x)SD1Periode(age1,1000,nb1,
+                                                    age2vec[i],1000*x,nb2,
+                                                    b1=b1, b2=b2))
+      }
+    }
+    
+    grid <- expand.grid(age = age2vec, benMulti = benefitMultiplier)
+    
+    ### Flatten matrices column-wise (assuming they match grid layout)
+    grid$sdProxy <- as.vector(sdProxy)
+    grid$SIP <- as.vector(SIP_Approx)
+    
+    ### fit model
+    
+    gam_fit <- gam(SIP ~ te(age, benMulti, sdProxy, k=5), data = grid)
+    summary(gam_fit)
+    
+    grid$SIP_smooth <- predict(gam_fit, newdata = grid)
+    
+    riskStability <- matrix(grid$SIP_smooth, nrow = length(age2vec),
+                            ncol = length(benefitMultiplier))
+    
+    
+  }
+  
+  
+  riskSmallHomo <- compApproxSIP(nb1, 0, age1, age1, benefit1,
+                                 benefit1)
+  
+  # extract age slice
+  {
+    # get age slices
+    age2Vec <- seq(55, 75, by = .1)
+    benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 101))
+    rowAge <- sapply(age2, function(x)which.min(abs(age2Vec-x)))
+    slices <- riskStability[rowAge,]
+    
+    # get homogeneous value 
+    benMultiToExtract <- 1
+    colMultiplier <- which.min(abs(benefitMultiplier-benMultiToExtract)) 
+    rowAge <- which(age1==age2Vec)
+    homoSIP <- riskStability[rowAge,colMultiplier]
+  }
+  
+  #plot
+  {
+    colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
+    colors <- rep(colors, length.out = nrow(slices))  # ensure enough colors
+    
+    p <- plot_ly() 
+    
+    # Add each column of slices as a separate trace
+    for (i in 1:nrow(slices)) {
+      p <- add_trace(
+        p,
+        x = benefitMultiplier,
+        y = slices[i,],
+        type = 'scatter',
+        mode = 'lines',
+        line = list(color = colors[i]),
+        name = paste0("Age ", age2[i])
+      )
+      
+      # Add vertical line at Benefit = some value (if desired)
+      # Example if you want a vertical reference at max of ages:
+      p <- add_trace(
+        p,
+        x = c(benefitMultiplier[which(max(slices[i,])==slices[i,])],
+              benefitMultiplier[which(max(slices[i,])==slices[i,])]),
+        y = c(min(slices,riskSmallHomo)-1, max(slices,homoSIP)+1),
+        type = 'scatter',
+        mode = 'lines',
+        line = list(dash = 'dot', color = colors[i]),
+        name = paste("Max stability age", age2[i]),
+        showlegend=F
+      )
+    }
+    
+    # Add horizontal lines
+    p <- add_trace(
+      p,
+      x = c(min(benefitMultiplier), max(benefitMultiplier)),
+      y = c(homoSIP, homoSIP),
+      type = 'scatter',
+      mode = 'lines',
+      line = list(dash = 'dash', color = 'gray'),
+      name = paste(nb1+nb2, " members from group 1"),
+      showlegend=T
+    )
+    
+    p <- add_trace(
+      p,
+      x = c(min(benefitMultiplier), max(benefitMultiplier)),
+      y = c(riskSmallHomo, riskSmallHomo),
+      type = 'scatter',
+      mode = 'lines',
+      line = list(dash = 'dash', color = 'black'),
+      name = paste(nb1, " members from group 1"),
+      showlegend=T
+    )
+    
+    # Final layout
+    p <- layout(
+      p,
+      font = list(family = fontType),
+      xaxis = list(title = list(text = "Initial benefit of in group 2",
+                                standoff = 5),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),showgrid=FALSE,
+                   ticks    = "outside",
+                   type = "log",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      yaxis = list(title = list(text = "Stable income period"),
+                   titlefont = axisFont,
+                   range = range(10,22),
+                   tickfont = list(size = 12),showgrid=FALSE,
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      legend = list(x = 0.02, y = .98,
+                    xanchor = "left",
+                    yanchor = "top",
+                    font = legendFont,
+                    bordercolor = "black", # Set the legend border color
+                    borderwidth = 1,
+                    bgcolor = "rgba(255, 255, 255, 0.9)"),
+      margin = list(t = 30, b=40)
+    )
+    p
+  }
+  save_image(p,paste0(exportPath,"SIPWealthHeteMortality_b",b1,b2,".pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SIPWealthHeteMortality_b",b1,b2,".pdf"))
+  
+  
+  # extract wealth slice
+  {
+    # get wealth slices
+    age2 <- seq(55, 75, by = .1)
+    benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 101))
+    colMultiplier <- sapply(diffWealth, function(x)which.min(abs(benefitMultiplier-x)))
+    slices <- riskStability[,colMultiplier]
+    
+    # get homogeneous value 
+    benMultiToExtract <- 1
+    colMultiplier <- which.min(abs(benefitMultiplier-benMultiToExtract)) 
+    rowAge <- which(age1==age2)
+    homoSIP <- riskStability[rowAge,colMultiplier]
+  }
+  
+  #plot
+  {
+    colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
+    colors <- rep(colors, length.out = ncol(slices))  # ensure enough colors
+    p <- plot_ly() 
+    
+    # Add each column of slices as a separate trace
+    for (i in 1:ncol(slices)) {
+      p <- add_trace(
+        p,
+        x = age2,
+        y = slices[, i],
+        type = 'scatter',
+        mode = 'lines',
+        line = list(color = colors[i]),
+        name = paste0("<i>y</i> = ", diffWealth[i])
+      )
+    }
+    
+    # Add horizontal lines
+    p <- add_trace(
+      p,
+      x = c(min(age2), max(age2)),
+      y = c(homoSIP, homoSIP),
+      type = 'scatter',
+      mode = 'lines',
+      line = list(dash = 'dash', color = 'gray'),
+      name = paste(nb1+nb2, " members from group 1")
+    )
+    
+    p <- add_trace(
+      p,
+      x = c(min(age2), max(age2)),
+      y = c(riskSmallHomo, riskSmallHomo),
+      type = 'scatter',
+      mode = 'lines',
+      line = list(dash = 'dash', color = 'black'),
+      name = paste(nb1, " members from group 1")
+    )
+    # Final layout
+    p <- layout(
+      p,
+      font = list(family = fontType),
+      xaxis = list(title = list(text = "Age of members in group 2",
+                                standoff = 5),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      yaxis = list(title = list(text = "Stable income period"),
+                   titlefont = axisFont,
+                   tickfont = list(size = 12),
+                   ticks    = "outside",
+                   ticklen  = 8,
+                   range = range(9,26),
+                   showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      legend = list(x = 0.98, y = .98,
+                    xanchor = "right",
+                    yanchor = "top",
+                    font = legendFont,
+                    bordercolor = "black", # Set the legend border color
+                    borderwidth = 1,
+                    bgcolor = "rgba(255, 255, 255, 0.9)"),
+      margin = list(t = 30, b=40)
+    )
+    p
+  }
+  save_image(p,paste0(exportPath,"SIPMortalityHeteWealth",b1,b2,".pdf"),
+             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+  browseURL(paste0(exportPath,"SIPMortalityHeteWealth",b1,b2,".pdf"))
+}
+
+####### Other:tPx ########
+b <- 14
+{
+p <- plot_ly()
+p <- add_trace(
+  p,
+  x = 55:120,
+  y = tpx(1,55:120,b=b),
+  type = 'scatter',
+  mode = 'lines',
+  line = list(color = 'black'),
+  showlegend=F
+)
+
+# Final layout
+p <- layout(
+  p,
+  font = list(family = fontType),
+  xaxis = list(title = list(text = "Age x",
+                            standoff = 5),
+               titlefont = axisFont,
+               tickfont = list(size = 12),
+               ticks    = "outside",
+               range = c(55,120),
+               ticklen  = 8,
+               showline = TRUE, mirror = TRUE, zeroline = FALSE),
+  yaxis = list(title = list(text = "1 year survival prob '1px'"),
+               titlefont = axisFont,
+               range = c(0,1),
+               tickfont = list(size = 12),
+               ticks    = "outside",
+               ticklen  = 8,
+               showline = TRUE, mirror = TRUE, zeroline = FALSE),
+  legend = list(x = 0.02, y = .98,
+                xanchor = "left",
+                yanchor = "top",
+                font = legendFont,
+                bordercolor = "black", # Set the legend border color
+                borderwidth = 1,
+                bgcolor = "rgba(255, 255, 255, 0.9)"),
+  margin = list(t = 30, b=40)
+)
+p
+
+save_image(p,paste0(exportPath,"tpx_b",b,".pdf"),
+           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+browseURL(paste0(exportPath,"tpx_b",b,".pdf"))
+
 }
 
 ###############################################################################
@@ -2084,7 +2605,7 @@ nb2 <- 100        # 50, 100 and 200 available for all
 
 age1 <- 65        #only 60, 65 and 70 available
 benefit1 <- 100
-age2 <- 73
+age2 <- 70
 benefit2 <- 500
 b1 = 10
 b2 = 10
@@ -2126,13 +2647,33 @@ b2 = 10
   }
   
   {
-    currentSplit <- (nb1*asset1)/(nb1*asset1+nb2*asset2)
+    totAsset <- (nb1*asset1+nb2*asset2)
+    currentSplit <- (nb1*asset1)/totAsset
     currentY <- benefit2/benefit1
     
-    listBadY <- dfworsteSIP$benefitMultiplier[dfworsteSIP$age2Vec==age2]
-    listGoodY <- benefitMultiplier[!benefitMultiplier%in%listBadY]
+    newY <- benefitMultiplier[which.max(riskStability[age2Vec ==age2,])]
+  }
+  
+  {#table info
+    pps1natural <- asset1/benefit1
+    pps2natural <- asset2/benefit2
+    naturalSIP <- riskStability[age2Vec ==age2,
+                                which.min(abs(benefitMultiplier-currentY))]
     
-    newY <- listGoodY[which.min(abs(currentY-listGoodY))]
+    optimizedSIP <- riskStability[age2Vec == age2,
+                                  which.min(abs(benefitMultiplier-newY))]
+    
+    SIP1benchmark <- riskSmallHomo
+    SIP2benchmark <- riskStabilitySmallHomo[age2Vec ==age2,
+                                            which.min(abs(benefitMultiplier-currentY))]
+    
+    newAssetRatio <- as.vector(newY*annuity(age2,.02)/annuity(age1,.02))
+    newAsset1 <- totAsset/(nb1+nb2*newAssetRatio)
+    newAsset2 <- (totAsset-nb1*newAsset1)/nb2
+    newBen1 <- as.vector(newAsset1/annuity(age1, .02))
+    newBen2 <- as.vector(newAsset2/annuity(age2, .02))
+    pps1optim <- asset1/newBen1
+    pps2optim <- asset2/newBen2
   }
   
   # contour Plot
@@ -2239,29 +2780,26 @@ b2 = 10
 }
 
 
-####### Fig 17-18:Initial Benefit and SIP Preferences #######
+####### Fig 17:Initial Benefit and SIP Preferences #######
 # dimensions as percentage of page
-w <- .8    #width
-h <- .2  #height
+w <- .7    #width
+h <- .25  #height
 
-# adjustable parameters
-nb1 <- 100      # do not change
+# not adjustable parameters
+nb1 <- 100
 age1 <- 65
 benefit1 <- 100
 nb2 <- 100
-age2 <- 73
+age2 <- 70
 benefit2 <- 500
 
 alpha <- 2 #risk aversion level
 
-# utility plot
+b1=10 #mortality param
+b2=10
+
+# contour plot Fig 17
 {
-  asset1 <- as.vector(benefit1*annuity(age1,.02))
-  asset2 <- as.vector(benefit2*annuity(age2,.02))
-  
-  percBenefit1 <- benefit1/asset1
-  percBenefit2 <- benefit2/asset2
-  
   
   # import base stability when group 1 is on its own
   riskSmallHomo <- readRDS(paste0("simulatedData/BaseRisk", 
@@ -2275,12 +2813,21 @@ alpha <- 2 #risk aversion level
   name <- paste0("simulatedData/smoothedSIP_nb",0,nb2,"_b",b1,b2,".rds")
   riskStabilitySmallHomo <- readRDS(name)[,1]
   
+  # import smoothed stability when group 2 is on its own
+  name <- paste0("simulatedData/smoothedSIP_nb",0,nb2,"_b",b1,b2,".rds")
+  riskStabilitySmallHomo <- readRDS(name)
+  
+  asset1 <- as.vector(benefit1*annuity(age1,.02))
+  asset2 <- as.vector(benefit2*annuity(age2,.02))
+  percBenefit1 <- benefit1/asset1
+  percBenefit2 <- benefit2/asset2
+  
   
   age2Vec <- seq(55, 75, by = .1)
   benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 101))
   
   SIP1 <- riskSmallHomo
-  SIP2 <- riskStabilitySmallHomo[age2==age2Vec]
+  SIP2 <- riskStabilitySmallHomo[age2==age2Vec,1]
   
   
   utile1 <- utilityFn(SIP1,percBenefit1, alpha)
@@ -2298,19 +2845,6 @@ alpha <- 2 #risk aversion level
                             asset2 = asset2,
                             matSIP = riskStability,
                             assetSplit = baseSplit)
-  #background indifference
-  {
-    utileVec1 <- utile1+ seq(-ceiling(utile1),2, by = 0.05)
-    backgroundindifferenceCurve1 <- sapply(utileVec1,
-                                           function(x) utilityCurve(x,SIPIndif1,
-                                                                    alpha))
-    
-    utileVec2 <- utile2+ seq(-ceiling(utile2),2, by = 0.05)
-    backgroundindifferenceCurve2 <- sapply(utileVec2,
-                                           function(x) utilityCurve(x,SIPIndif2,
-                                                                    alpha))
-  }
-  
   
   splits <- seq(0.01,.99,0.001)
   traceVec <- sapply(splits, function(a)  meanVarMatrix(nb1 = nb1, age1 = age1,
@@ -2347,333 +2881,6 @@ alpha <- 2 #risk aversion level
     
   }
   
-  #good reallocation example
-  {
-    goodId <- 270
-  }
-  
-  ##plot split in 2
-  {
-    #color setup
-    {
-      winterColormap <- c(rgb(0,(0:256)/256,(1-((0:256)/256))*.5+.5))
-      normalized_positions <- seq(0, 1, length.out = length(winterColormap))
-      winterColormapWeights <- lapply(
-        seq_along(winterColormap), 
-        function(i) {
-          list(normalized_positions[i], winterColormap[i])
-        }
-      )
-      
-      rgbSOA <- matrix(c(2,77,124,186,191,51,119,196,213,253,206,7,210,49,56,1,1,1, 255,255,255), byrow = TRUE, ncol = 3)/255
-      colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
-      colors <- rep(colors, length.out = 10)  # ensure enough colors
-    }
-    
-    ###gr1
-    {
-      #plot
-      p <- plot_ly()
-      
-      for (i in 1:ncol(backgroundindifferenceCurve1)) {
-        p <- add_trace(
-          p,
-          x = SIPIndif1,
-          y = backgroundindifferenceCurve1[,i],
-          type = 'scatter',
-          mode = 'lines',
-          line = list(color = "#d3d3d3", width = 2),
-          showlegend = F
-        )
-      }
-      #Axis Group 1
-      p <- add_trace(
-        p,
-        x = c(-10,20),
-        y = c(percBenefit1,percBenefit1),
-        type = 'scatter',
-        mode = 'lines',
-        line = list(color = 'black', width = 2, dash='dash'),
-        showlegend = F
-      )%>%add_trace(
-        p,
-        x = c(SIP1,SIP1),
-        y = c(-1000,1000),
-        type = 'scatter',
-        mode = 'lines',
-        line = list(color = 'black', width = 2, dash='dash'),
-        showlegend = F
-      )
-      
-      # group 1
-      p <- add_trace(
-        p,
-        x = grid1$smoothyX,
-        y = grid1$y,
-        type = 'scatter',
-        mode = 'markers',
-        marker = list(color = splits, colorscale = winterColormapWeights,
-                      symbol = 'circle', size = 3),
-        showlegend = F
-      )%>%add_trace(##out of frame line for legend purpose
-        x = c(-10,-11),
-        y = c(-10,-11),
-        type = 'scatter',
-        mode = 'lines',
-        line = list(color = winterColormap[125], width = 2),
-        name = paste0("Group 1: ", nb1, " members of age ", age1)
-      )%>%add_trace(
-        x = SIP1,
-        y = percBenefit1,
-        type = 'scatter',
-        mode = 'markers',
-        marker = list(color = colors[2] , size = 7, symbol = 'diamond'),
-        showlegend = F
-      )%>%add_trace(
-        x = SIPIndif1,
-        y = indifferenceCurve1,
-        type = 'scatter',
-        mode = 'lines',
-        line = list(color = colors[2], width = 2),
-        name = paste0("Group 1's benchmark indifference curve")
-      )
-      
-      #annotations
-      p <- p%>%add_annotations(
-        x = baseCase[1],
-        y = baseCase[2],
-        text = "Natural pricing",
-        xref = "x",
-        yref = "y",
-        showarrow = TRUE,
-        arrowhead = 1,
-        arrowwidth = 1.5,
-        ax = -10,
-        ay = -40,
-        font = list(color = "red")
-      )%>%add_annotations(
-        x = grid1$smoothyX[goodId],
-        y = grid1$y[goodId],
-        text = "E.g. good pricing",
-        xref = "x",
-        yref = "y",
-        showarrow = TRUE,
-        arrowhead = 1,
-        arrowwidth = 1.5,
-        ax = -10,
-        ay = -40,
-        font = list(color = "green")
-      )
-      
-      p <- add_trace(
-        p,
-        x = (grid1$smoothyX[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)], #only take some of them for plot visibility
-        y = (grid1$y[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)],
-        type = 'scatter',
-        mode = 'markers',
-        marker = list(color = "red",
-                      symbol = "line-ne-open", size = 7),
-        name = paste0("no no region group 1")
-      )%>%add_trace(
-        x = (grid1$smoothyX[noGoodIndex2])[seq(1,length(noGoodIndex2),10)], #only take some of them for plot visibility
-        y = (grid1$y[noGoodIndex2])[seq(1,length(noGoodIndex2),10)],
-        type = 'scatter',
-        mode = 'markers',
-        marker = list(color = "red",
-                      symbol = "line-nw-open", size = 7),
-        name = paste0("no no region group 2")
-      )
-      
-      
-      # Final layout
-      p <- layout(
-        p,
-        font = list(family = fontType),
-        xaxis = list(title = list(text = "SIP",
-                                  standoff = 5),
-                     range = c(range(c(grid1$smoothyX,grid2$smoothyX))*c(.85,1.05)),
-                     titlefont = axisFont,
-                     tickfont = list(size = 12),
-                     ticks    = "outside",
-                     ticklen  = 8,
-                     showline = TRUE, mirror = TRUE, zeroline = FALSE),
-        yaxis = list(title = list(text = "Initial yield"),
-                     range = c(range(c(grid1$y,grid2$y))+c(-.01,.05)),
-                     titlefont = axisFont,
-                     tickfont = list(size = 12),
-                     ticks    = "outside",
-                     ticklen  = 8,
-                     showline = TRUE, mirror = TRUE, zeroline = FALSE),
-        legend = list(x = 0.02, y = .98,
-                      xanchor = "left",
-                      yanchor = "top",
-                      font = legendFont,
-                      bordercolor = "black", # Set the legend border color
-                      borderwidth = 1,
-                      bgcolor = "rgba(255, 255, 255, 0.9)"),
-        margin = list(t = 30, b=40)
-      )
-      p
-    }
-    save_image(p,paste0(exportPath,"benefitSIPCurveGr1.pdf"),
-               width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-    browseURL(paste0(exportPath,"benefitSIPCurveGr1.pdf"))
-    
-    ###gr2
-    {
-      p <- plot_ly()
-      
-      for (i in 1:ncol(backgroundindifferenceCurve2)) {
-        p <- add_trace(
-          p,
-          x = SIPIndif2,
-          y = backgroundindifferenceCurve2[,i],
-          type = 'scatter',
-          mode = 'lines',
-          line = list(color = "#d3d3d3", width = 2),
-          showlegend = F
-        )
-      }
-      #Axis Group 2
-      p <- add_trace(
-        p,
-        x = c(-10,20),
-        y = c(percBenefit2,percBenefit2),
-        type = 'scatter',
-        mode = 'lines',
-        line = list(color = 'black', width = 2, dash='dash'),
-        showlegend = F
-      )%>%add_trace(
-        p,
-        x = c(SIP2,SIP2),
-        y = c(-1000,1000),
-        type = 'scatter',
-        mode = 'lines',
-        line = list(color = 'black', width = 2, dash='dash'),
-        showlegend = F
-      )
-      
-      # group 2
-      p <- add_trace(
-        p,
-        x = grid2$smoothyX,
-        y = grid2$y,
-        type = 'scatter',
-        mode = 'markers',
-        marker = list(color = splits, colorscale = winterColormapWeights,
-                      symbol = 'circle', size = 3),
-        showlegend=F
-      )%>%add_trace(##out of frame line for legend purpose
-        x = c(-10,-11),
-        y = c(-10,-11),
-        type = 'scatter',
-        mode = 'lines',
-        line = list(color = winterColormap[125], width = 2),
-        name = paste0("Group 2: ", nb2, " members of age ", age2)
-      )%>%add_trace(
-        p,
-        x = SIP2,
-        y = percBenefit2,
-        type = 'scatter',
-        mode = 'markers',
-        marker = list(color = colors[4], size = 7, symbol = 'diamond'),
-        showlegend = F
-      )%>%add_trace(
-        p,
-        x = SIPIndif2,
-        y = indifferenceCurve2,
-        type = 'scatter',
-        mode = 'lines',
-        line = list(color = colors[4], width = 2),
-        name = paste0("Group 2's benchmark indifference curve")
-      )
-      
-      p <- p%>%add_annotations(
-        x = baseCase[3],
-        y = baseCase[4],
-        text = "Natural pricing",
-        xref = "x",
-        yref = "y",
-        showarrow = TRUE,
-        arrowhead = 1,
-        arrowwidth = 1.5,
-        ax = -10,
-        ay = -40,
-        font = list(color = "red")
-      )%>%add_annotations(
-        x = grid2$smoothyX[goodId],
-        y = grid2$y[goodId],
-        text = "E.g. good pricing",
-        xref = "x",
-        yref = "y",
-        showarrow = TRUE,
-        arrowhead = 1,
-        arrowwidth = 1.5,
-        ax = -10,
-        ay = -30,
-        font = list(color = "green")
-      )
-      
-      p <- add_trace(
-        p,
-        x = (grid2$smoothyX[noGoodIndex2])[seq(1,length(noGoodIndex2),10)], #only take some of them for plot visibility
-        y = (grid2$y[noGoodIndex2])[seq(1,length(noGoodIndex2),10)],
-        type = 'scatter',
-        mode = 'markers',
-        marker = list(color = "red",
-                      symbol = "line-nw-open", size = 7),
-        name = paste0("no no region group 2")
-      )%>%add_trace(
-        x = (grid2$smoothyX[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)], #only take some of them for plot visibility
-        y = (grid2$y[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)],
-        type = 'scatter',
-        mode = 'markers',
-        marker = list(color = "red",
-                      symbol = "line-ne-open", size = 7),
-        name = paste0("no no region group 1"))
-      
-      # Final layout
-      p <- layout(
-        p,
-        font = list(family = fontType),
-        xaxis = list(title = list(text = "SIP",
-                                  standoff = 5),
-                     range = c(range(c(grid1$smoothyX,grid2$smoothyX))*c(.85,1.05)),
-                     titlefont = axisFont,
-                     tickfont = list(size = 12),
-                     ticks    = "outside",
-                     ticklen  = 8,
-                     showline = TRUE, mirror = TRUE, zeroline = FALSE),
-        yaxis = list(title = list(text = "Initial yield"),
-                     range = c(range(c(grid1$y,grid2$y))+c(-.01,.05)),
-                     titlefont = axisFont,
-                     tickfont = list(size = 12),
-                     ticks    = "outside",
-                     ticklen  = 8,
-                     showline = TRUE, mirror = TRUE, zeroline = FALSE),
-        legend = list(x = 0.98, y = .98,
-                      xanchor = "right",
-                      yanchor = "top",
-                      font = legendFont,
-                      bordercolor = "black", # Set the legend border color
-                      borderwidth = 1,
-                      bgcolor = "rgba(255, 255, 255, 0.9)"),
-        margin = list(t = 30, b=40)
-      )
-      p
-    }
-    save_image(p,paste0(exportPath,"benefitSIPCurveGr2.pdf"),
-               width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-    browseURL(paste0(exportPath,"benefitSIPCurveGr2.pdf"))
-    
-  }
-}
-
-# Dim for contour plot
-w <- .7    #width
-h <- .25  #height
-# contour plot
-{
   goodRebalanceId <- seq_along(splits)[!seq_along(splits)%in%c(noGoodIndex1,
                                                                noGoodIndex2)]
   minY <- (grid2$y[min(goodRebalanceId)]*asset2)/(grid1$y[min(goodRebalanceId)]*asset1)
@@ -2681,15 +2888,8 @@ h <- .25  #height
   
   currentY <- benefit2/benefit1
   
-  # import smoothed stability when group 2 is on its own
-  name <- paste0("simulatedData/smoothedSIP_nb",0,nb2,"_b",b1,b2,".rds")
-  riskStabilitySmallHomo <- readRDS(name)
-  
   # get worse areas (no better area possible for both at the same time)
   {
-    age2Vec <- seq(55, 75, by = .1)
-    benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 101))
-    
     
     dfworsteSIP <- list(SIP = riskStability[riskStability<=riskStabilitySmallHomo
                                             |riskStability<=riskSmallHomo])
@@ -2701,6 +2901,50 @@ h <- .25  #height
                                             byrow = T)[riskStability<=riskStabilitySmallHomo
                                                        |riskStability<=riskSmallHomo]
     
+  }
+  
+  #table info
+  {
+    totAsset <- (nb1*asset1+nb2*asset2)
+    
+    
+    benchmarkObjFn1 <- utile1
+    benchmarkObjFn2 <- utile2
+    SIP1benchmark <- riskSmallHomo
+    SIP2benchmark <- riskStabilitySmallHomo[age2Vec ==age2,
+                                            which.min(abs(benefitMultiplier-currentY))]
+    
+    pps1natural <- asset1/benefit1
+    pps2natural <- asset2/benefit2
+    naturalSIP <- riskStability[age2Vec ==age2,
+                                which.min(abs(benefitMultiplier-currentY))]
+    naturalObjFn1 <- utilityFn(naturalSIP,1/pps1natural)
+    naturalObjFn2 <- utilityFn(naturalSIP,1/pps2natural)
+    
+    
+    lowLimSIP <- riskStability[age2Vec == age2,
+                               which.min(abs(benefitMultiplier-minY))]
+    lowLimAssetRatio <- as.vector(minY*annuity(age2,.02)/annuity(age1,.02))
+    lowLimAsset1 <- totAsset/(nb1+nb2*lowLimAssetRatio)
+    lowLimAsset2 <- (totAsset-nb1*lowLimAsset1)/nb2
+    lowLimBen1 <- as.vector(lowLimAsset1/annuity(age1, .02))
+    lowLimBen2 <- as.vector(lowLimAsset2/annuity(age2, .02))
+    pps1lowLim <- asset1/lowLimBen1
+    pps2lowLim <- asset2/lowLimBen2
+    lowLimObjFn1 <- utilityFn(lowLimSIP,1/pps1lowLim)
+    lowLimObjFn2 <- utilityFn(lowLimSIP,1/pps2lowLim)
+    
+    upLimSIP <- riskStability[age2Vec == age2,
+                              which.min(abs(benefitMultiplier-maxY))]
+    upLimAssetRatio <- as.vector(maxY*annuity(age2,.02)/annuity(age1,.02))
+    upLimAsset1 <- totAsset/(nb1+nb2*upLimAssetRatio)
+    upLimAsset2 <- (totAsset-nb1*upLimAsset1)/nb2
+    upLimBen1 <- as.vector(upLimAsset1/annuity(age1, .02))
+    upLimBen2 <- as.vector(upLimAsset2/annuity(age2, .02))
+    pps1upLim <- asset1/upLimBen1
+    pps2upLim <- asset2/upLimBen2
+    upLimObjFn1 <- utilityFn(upLimSIP,1/pps1upLim)
+    upLimObjFn2 <- utilityFn(upLimSIP,1/pps2upLim)
   }
   
   # contour Plot
@@ -2786,35 +3030,456 @@ h <- .25  #height
       )
     p
   }
-  save_image(p,paste0(exportPath,"SIPContourPreMitigate",nb1,nb2,".pdf"),
+  save_image(p,paste0(exportPath,"SIPContourPostUtilMitigate",nb1,nb2,".pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"SIPContourPreMitigate",nb1,nb2,".pdf"))
+  browseURL(paste0(exportPath,"SIPContourPostUtilMitigate",nb1,nb2,".pdf"))
 }
 
 
-####### Fig 19-20:(w/ risky asset) Initial Benefit and SIP Preferences #######
-# dimensions as percentage of page
+
 w <- .8    #width
 h <- .2  #height
+# utility plot (plot not used)
+{
+#   asset1 <- as.vector(benefit1*annuity(age1,.02))
+#   asset2 <- as.vector(benefit2*annuity(age2,.02))
+#   
+#   percBenefit1 <- benefit1/asset1
+#   percBenefit2 <- benefit2/asset2
+#   
+#   
+#   # import base stability when group 1 is on its own
+#   riskSmallHomo <- readRDS(paste0("simulatedData/BaseRisk", 
+#                                   age1,"_",nb1,".rds"))
+#   
+#   # import smoothed stability surface
+#   name <- paste0("simulatedData/smoothedSIP_nb",nb1,nb2,"_b",b1,b2,".rds")
+#   riskStability <- readRDS(name)
+#   
+#   # import smoothed stability when group 2 is on its own
+#   name <- paste0("simulatedData/smoothedSIP_nb",0,nb2,"_b",b1,b2,".rds")
+#   riskStabilitySmallHomo <- readRDS(name)[,1]
+#   
+#   
+#   age2Vec <- seq(55, 75, by = .1)
+#   benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 101))
+#   
+#   SIP1 <- riskSmallHomo
+#   SIP2 <- riskStabilitySmallHomo[age2==age2Vec]
+#   
+#   
+#   utile1 <- utilityFn(SIP1,percBenefit1, alpha)
+#   SIPIndif1 <- seq(1,30,.5)
+#   indifferenceCurve1 <- utilityCurve(utile1,SIPIndif1, alpha)
+#   
+#   utile2 <- utilityFn(SIP2,percBenefit2, alpha)
+#   SIPIndif2 <- seq(1,30,.5)
+#   indifferenceCurve2 <- utilityCurve(utile2,SIPIndif2, alpha)
+#   
+#   baseSplit <- (asset1*nb1)/(asset1*nb1+asset2*nb2)
+#   baseCase <- meanVarMatrix(nb1 = nb1, age1 = age1,
+#                             asset1 = asset1,
+#                             nb2 = nb2, age2 = age2,
+#                             asset2 = asset2,
+#                             matSIP = riskStability,
+#                             assetSplit = baseSplit)
+#   #background indifference
+#   {
+#     utileVec1 <- utile1+ seq(-ceiling(utile1),2, by = 0.05)
+#     backgroundindifferenceCurve1 <- sapply(utileVec1,
+#                                            function(x) utilityCurve(x,SIPIndif1,
+#                                                                     alpha))
+#     
+#     utileVec2 <- utile2+ seq(-ceiling(utile2),2, by = 0.05)
+#     backgroundindifferenceCurve2 <- sapply(utileVec2,
+#                                            function(x) utilityCurve(x,SIPIndif2,
+#                                                                     alpha))
+#   }
+#   
+#   
+#   splits <- seq(0.01,.99,0.001)
+#   traceVec <- sapply(splits, function(a)  meanVarMatrix(nb1 = nb1, age1 = age1,
+#                                                         asset1 = asset1,
+#                                                         nb2 = nb2, age2 = age2,
+#                                                         asset2 = asset2,
+#                                                         matSIP = riskStability,
+#                                                         assetSplit = a))
+#   # Create grid
+#   grid1 <- list(x = traceVec[1,], y = traceVec[2,], splits = splits)
+#   #fit model
+#   gam_fit1 <- gam(x ~ te(y, k=20), data = grid1)
+#   summary(gam_fit1)
+#   grid1$smoothyX <- predict(gam_fit1, newdata = grid1)
+#   # Create grid
+#   grid2 <- list(x = traceVec[3,], y = traceVec[4,], splits = splits)
+#   #fit model
+#   gam_fit2 <- gam(x ~ te(y, k=20), data = grid2)
+#   summary(gam_fit2)
+#   grid2$smoothyX <- predict(gam_fit2, newdata = grid2)
+#   
+#   #get worst points
+#   {
+#     #extend indifference curve (check for all benefit level of SIP curve)
+#     indifferenceCurve1Extended <- utilityCurve(utile1,grid1$smoothyX,alpha)
+#     indifferenceCurve2Extended <- utilityCurve(utile2,grid2$smoothyX,alpha)
+#     
+#     #compare for all benefit level
+#     diff1 <- grid1$y - indifferenceCurve1Extended
+#     diff2 <- grid2$y - indifferenceCurve2Extended
+#     
+#     noGoodIndex1 <- which(diff1<=0)
+#     noGoodIndex2 <- which(diff2<=0)
+#     
+#   }
+#   
+#   #good reallocation example
+#   {
+#     goodId <- 270
+#   }
+#   
+#   ##plot split in 2
+#   {
+#     #color setup
+#     {
+#       winterColormap <- c(rgb(0,(0:256)/256,(1-((0:256)/256))*.5+.5))
+#       normalized_positions <- seq(0, 1, length.out = length(winterColormap))
+#       winterColormapWeights <- lapply(
+#         seq_along(winterColormap), 
+#         function(i) {
+#           list(normalized_positions[i], winterColormap[i])
+#         }
+#       )
+#       
+#       rgbSOA <- matrix(c(2,77,124,186,191,51,119,196,213,253,206,7,210,49,56,1,1,1, 255,255,255), byrow = TRUE, ncol = 3)/255
+#       colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
+#       colors <- rep(colors, length.out = 10)  # ensure enough colors
+#     }
+#     
+#     ###gr1
+#     {
+#       #plot
+#       p <- plot_ly()
+#       
+#       for (i in 1:ncol(backgroundindifferenceCurve1)) {
+#         p <- add_trace(
+#           p,
+#           x = SIPIndif1,
+#           y = backgroundindifferenceCurve1[,i],
+#           type = 'scatter',
+#           mode = 'lines',
+#           line = list(color = "#d3d3d3", width = 2),
+#           showlegend = F
+#         )
+#       }
+#       #Axis Group 1
+#       p <- add_trace(
+#         p,
+#         x = c(-10,20),
+#         y = c(percBenefit1,percBenefit1),
+#         type = 'scatter',
+#         mode = 'lines',
+#         line = list(color = 'black', width = 2, dash='dash'),
+#         showlegend = F
+#       )%>%add_trace(
+#         p,
+#         x = c(SIP1,SIP1),
+#         y = c(-1000,1000),
+#         type = 'scatter',
+#         mode = 'lines',
+#         line = list(color = 'black', width = 2, dash='dash'),
+#         showlegend = F
+#       )
+#       
+#       # group 1
+#       p <- add_trace(
+#         p,
+#         x = grid1$smoothyX,
+#         y = grid1$y,
+#         type = 'scatter',
+#         mode = 'markers',
+#         marker = list(color = splits, colorscale = winterColormapWeights,
+#                       symbol = 'circle', size = 3),
+#         showlegend = F
+#       )%>%add_trace(##out of frame line for legend purpose
+#         x = c(-10,-11),
+#         y = c(-10,-11),
+#         type = 'scatter',
+#         mode = 'lines',
+#         line = list(color = winterColormap[125], width = 2),
+#         name = paste0("Group 1: ", nb1, " members of age ", age1)
+#       )%>%add_trace(
+#         x = SIP1,
+#         y = percBenefit1,
+#         type = 'scatter',
+#         mode = 'markers',
+#         marker = list(color = colors[2] , size = 7, symbol = 'diamond'),
+#         showlegend = F
+#       )%>%add_trace(
+#         x = SIPIndif1,
+#         y = indifferenceCurve1,
+#         type = 'scatter',
+#         mode = 'lines',
+#         line = list(color = colors[2], width = 2),
+#         name = paste0("Group 1's benchmark indifference curve")
+#       )
+#       
+#       #annotations
+#       p <- p%>%add_annotations(
+#         x = baseCase[1],
+#         y = baseCase[2],
+#         text = "Natural pricing",
+#         xref = "x",
+#         yref = "y",
+#         showarrow = TRUE,
+#         arrowhead = 1,
+#         arrowwidth = 1.5,
+#         ax = -10,
+#         ay = -40,
+#         font = list(color = "red")
+#       )%>%add_annotations(
+#         x = grid1$smoothyX[goodId],
+#         y = grid1$y[goodId],
+#         text = "E.g. good pricing",
+#         xref = "x",
+#         yref = "y",
+#         showarrow = TRUE,
+#         arrowhead = 1,
+#         arrowwidth = 1.5,
+#         ax = -10,
+#         ay = -40,
+#         font = list(color = "green")
+#       )
+#       
+#       p <- add_trace(
+#         p,
+#         x = (grid1$smoothyX[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)], #only take some of them for plot visibility
+#         y = (grid1$y[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)],
+#         type = 'scatter',
+#         mode = 'markers',
+#         marker = list(color = "red",
+#                       symbol = "line-ne-open", size = 7),
+#         name = paste0("no no region group 1")
+#       )%>%add_trace(
+#         x = (grid1$smoothyX[noGoodIndex2])[seq(1,length(noGoodIndex2),10)], #only take some of them for plot visibility
+#         y = (grid1$y[noGoodIndex2])[seq(1,length(noGoodIndex2),10)],
+#         type = 'scatter',
+#         mode = 'markers',
+#         marker = list(color = "red",
+#                       symbol = "line-nw-open", size = 7),
+#         name = paste0("no no region group 2")
+#       )
+#       
+#       
+#       # Final layout
+#       p <- layout(
+#         p,
+#         font = list(family = fontType),
+#         xaxis = list(title = list(text = "SIP",
+#                                   standoff = 5),
+#                      range = c(range(c(grid1$smoothyX,grid2$smoothyX))*c(.85,1.05)),
+#                      titlefont = axisFont,
+#                      tickfont = list(size = 12),
+#                      ticks    = "outside",
+#                      ticklen  = 8,
+#                      showline = TRUE, mirror = TRUE, zeroline = FALSE),
+#         yaxis = list(title = list(text = "Initial yield"),
+#                      range = c(range(c(grid1$y,grid2$y))+c(-.01,.05)),
+#                      titlefont = axisFont,
+#                      tickfont = list(size = 12),
+#                      ticks    = "outside",
+#                      ticklen  = 8,
+#                      showline = TRUE, mirror = TRUE, zeroline = FALSE),
+#         legend = list(x = 0.02, y = .98,
+#                       xanchor = "left",
+#                       yanchor = "top",
+#                       font = legendFont,
+#                       bordercolor = "black", # Set the legend border color
+#                       borderwidth = 1,
+#                       bgcolor = "rgba(255, 255, 255, 0.9)"),
+#         margin = list(t = 30, b=40)
+#       )
+#       p
+#     }
+#     # save_image(p,paste0(exportPath,"benefitSIPCurveGr1.pdf"),
+#     #            width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+#     # browseURL(paste0(exportPath,"benefitSIPCurveGr1.pdf"))
+#     # 
+#     ###gr2
+#     {
+#       p <- plot_ly()
+#       
+#       for (i in 1:ncol(backgroundindifferenceCurve2)) {
+#         p <- add_trace(
+#           p,
+#           x = SIPIndif2,
+#           y = backgroundindifferenceCurve2[,i],
+#           type = 'scatter',
+#           mode = 'lines',
+#           line = list(color = "#d3d3d3", width = 2),
+#           showlegend = F
+#         )
+#       }
+#       #Axis Group 2
+#       p <- add_trace(
+#         p,
+#         x = c(-10,20),
+#         y = c(percBenefit2,percBenefit2),
+#         type = 'scatter',
+#         mode = 'lines',
+#         line = list(color = 'black', width = 2, dash='dash'),
+#         showlegend = F
+#       )%>%add_trace(
+#         p,
+#         x = c(SIP2,SIP2),
+#         y = c(-1000,1000),
+#         type = 'scatter',
+#         mode = 'lines',
+#         line = list(color = 'black', width = 2, dash='dash'),
+#         showlegend = F
+#       )
+#       
+#       # group 2
+#       p <- add_trace(
+#         p,
+#         x = grid2$smoothyX,
+#         y = grid2$y,
+#         type = 'scatter',
+#         mode = 'markers',
+#         marker = list(color = splits, colorscale = winterColormapWeights,
+#                       symbol = 'circle', size = 3),
+#         showlegend=F
+#       )%>%add_trace(##out of frame line for legend purpose
+#         x = c(-10,-11),
+#         y = c(-10,-11),
+#         type = 'scatter',
+#         mode = 'lines',
+#         line = list(color = winterColormap[125], width = 2),
+#         name = paste0("Group 2: ", nb2, " members of age ", age2)
+#       )%>%add_trace(
+#         p,
+#         x = SIP2,
+#         y = percBenefit2,
+#         type = 'scatter',
+#         mode = 'markers',
+#         marker = list(color = colors[4], size = 7, symbol = 'diamond'),
+#         showlegend = F
+#       )%>%add_trace(
+#         p,
+#         x = SIPIndif2,
+#         y = indifferenceCurve2,
+#         type = 'scatter',
+#         mode = 'lines',
+#         line = list(color = colors[4], width = 2),
+#         name = paste0("Group 2's benchmark indifference curve")
+#       )
+#       
+#       p <- p%>%add_annotations(
+#         x = baseCase[3],
+#         y = baseCase[4],
+#         text = "Natural pricing",
+#         xref = "x",
+#         yref = "y",
+#         showarrow = TRUE,
+#         arrowhead = 1,
+#         arrowwidth = 1.5,
+#         ax = -10,
+#         ay = -40,
+#         font = list(color = "red")
+#       )%>%add_annotations(
+#         x = grid2$smoothyX[goodId],
+#         y = grid2$y[goodId],
+#         text = "E.g. good pricing",
+#         xref = "x",
+#         yref = "y",
+#         showarrow = TRUE,
+#         arrowhead = 1,
+#         arrowwidth = 1.5,
+#         ax = -10,
+#         ay = -30,
+#         font = list(color = "green")
+#       )
+#       
+#       p <- add_trace(
+#         p,
+#         x = (grid2$smoothyX[noGoodIndex2])[seq(1,length(noGoodIndex2),10)], #only take some of them for plot visibility
+#         y = (grid2$y[noGoodIndex2])[seq(1,length(noGoodIndex2),10)],
+#         type = 'scatter',
+#         mode = 'markers',
+#         marker = list(color = "red",
+#                       symbol = "line-nw-open", size = 7),
+#         name = paste0("no no region group 2")
+#       )%>%add_trace(
+#         x = (grid2$smoothyX[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)], #only take some of them for plot visibility
+#         y = (grid2$y[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)],
+#         type = 'scatter',
+#         mode = 'markers',
+#         marker = list(color = "red",
+#                       symbol = "line-ne-open", size = 7),
+#         name = paste0("no no region group 1"))
+#       
+#       # Final layout
+#       p <- layout(
+#         p,
+#         font = list(family = fontType),
+#         xaxis = list(title = list(text = "SIP",
+#                                   standoff = 5),
+#                      range = c(range(c(grid1$smoothyX,grid2$smoothyX))*c(.85,1.05)),
+#                      titlefont = axisFont,
+#                      tickfont = list(size = 12),
+#                      ticks    = "outside",
+#                      ticklen  = 8,
+#                      showline = TRUE, mirror = TRUE, zeroline = FALSE),
+#         yaxis = list(title = list(text = "Initial yield"),
+#                      range = c(range(c(grid1$y,grid2$y))+c(-.01,.05)),
+#                      titlefont = axisFont,
+#                      tickfont = list(size = 12),
+#                      ticks    = "outside",
+#                      ticklen  = 8,
+#                      showline = TRUE, mirror = TRUE, zeroline = FALSE),
+#         legend = list(x = 0.98, y = .98,
+#                       xanchor = "right",
+#                       yanchor = "top",
+#                       font = legendFont,
+#                       bordercolor = "black", # Set the legend border color
+#                       borderwidth = 1,
+#                       bgcolor = "rgba(255, 255, 255, 0.9)"),
+#         margin = list(t = 30, b=40)
+#       )
+#       p
+#     }
+#     # save_image(p,paste0(exportPath,"benefitSIPCurveGr2.pdf"),
+#     #            width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+#     # browseURL(paste0(exportPath,"benefitSIPCurveGr2.pdf"))
+#     
+#   }
+}
 
-# adjustable parameters
-nb1 <- 100      # do not change
+
+####### Fig 18:(w/ risky asset) Initial Benefit and SIP Preferences #######
+# dimensions as percentage of page
+w <- .7    #width
+h <- .25  #height
+
+# not adjustable parameters
+nb1 <- 100
 age1 <- 65
 benefit1 <- 100
 nb2 <- 100
-age2 <- 73
+age2 <- 70
 benefit2 <- 500
 
 alpha <- 2 #risk aversion level
 
-# utility plot
+b1=10 #mortality param
+b2=10
+# contour plot Fig 18
 {
+  
   asset1 <- as.vector(benefit1*annuity(age1,.02))
   asset2 <- as.vector(benefit2*annuity(age2,.02))
   
   percBenefit1 <- benefit1/asset1
   percBenefit2 <- benefit2/asset2
-  
   
   # import base stability when group 1 is on its own
   riskSmallHomo <- readRDS(paste0("simulatedData/BaseRisk_risky_", 
@@ -2826,14 +3491,14 @@ alpha <- 2 #risk aversion level
   
   # import smoothed stability when group 2 is on its own
   name <- paste0("simulatedData/smoothedSIP_risky_nb",0,nb2,"_b",b1,b2,".rds")
-  riskStabilitySmallHomo <- readRDS(name)[,1]
+  riskStabilitySmallHomo <- readRDS(name)
   
   
   age2Vec <- seq(55, 75, by = .1)
   benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 101))
   
   SIP1 <- riskSmallHomo
-  SIP2 <- riskStabilitySmallHomo[age2==age2Vec]
+  SIP2 <- riskStabilitySmallHomo[age2==age2Vec,1]
   
   
   utile1 <- utilityFn(SIP1,percBenefit1, alpha)
@@ -2852,19 +3517,6 @@ alpha <- 2 #risk aversion level
                             matSIP = riskStability,
                             assetSplit = baseSplit)
   #background indifference
-  {
-    utileVec1 <- utile1+ seq(-ceiling(utile1),2, by = 0.05)
-    backgroundindifferenceCurve1 <- sapply(utileVec1,
-                                           function(x) utilityCurve(x,SIPIndif1,
-                                                                    alpha))
-    
-    utileVec2 <- utile2+ seq(-ceiling(utile2),2, by = 0.05)
-    backgroundindifferenceCurve2 <- sapply(utileVec2,
-                                           function(x) utilityCurve(x,SIPIndif2,
-                                                                    alpha))
-  }
-  
-  
   splits <- seq(0.01,.99,0.001)
   traceVec <- sapply(splits, function(a)  meanVarMatrix(nb1 = nb1, age1 = age1,
                                                         asset1 = asset1,
@@ -2900,314 +3552,12 @@ alpha <- 2 #risk aversion level
     
   }
   
-  ##plot split in 2
-  {
-    #color setup
-    {
-      winterColormap <- c(rgb(0,(0:256)/256,(1-((0:256)/256))*.5+.5))
-      normalized_positions <- seq(0, 1, length.out = length(winterColormap))
-      winterColormapWeights <- lapply(
-        seq_along(winterColormap), 
-        function(i) {
-          list(normalized_positions[i], winterColormap[i])
-        }
-      )
-      
-      rgbSOA <- matrix(c(2,77,124,186,191,51,119,196,213,253,206,7,210,49,56,1,1,1, 255,255,255), byrow = TRUE, ncol = 3)/255
-      colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
-      colors <- rep(colors, length.out = 10)  # ensure enough colors
-    }
-    
-    ###gr1
-    {
-      #plot
-      p <- plot_ly()
-      
-      for (i in 1:ncol(backgroundindifferenceCurve1)) {
-        p <- add_trace(
-          p,
-          x = SIPIndif1,
-          y = backgroundindifferenceCurve1[,i],
-          type = 'scatter',
-          mode = 'lines',
-          line = list(color = "#d3d3d3", width = 2),
-          showlegend = F
-        )
-      }
-      #Axis Group 1
-      p <- add_trace(
-        p,
-        x = c(-10,20),
-        y = c(percBenefit1,percBenefit1),
-        type = 'scatter',
-        mode = 'lines',
-        line = list(color = 'black', width = 2, dash='dash'),
-        showlegend = F
-      )%>%add_trace(
-        p,
-        x = c(SIP1,SIP1),
-        y = c(-1000,1000),
-        type = 'scatter',
-        mode = 'lines',
-        line = list(color = 'black', width = 2, dash='dash'),
-        showlegend = F
-      )
-      
-      # group 1
-      p <- add_trace(
-        p,
-        x = grid1$smoothyX,
-        y = grid1$y,
-        type = 'scatter',
-        mode = 'markers',
-        marker = list(color = splits, colorscale = winterColormapWeights,
-                      symbol = 'circle', size = 3),
-        showlegend = F
-      )%>%add_trace(##out of frame line for legend purpose
-        x = c(-10,-11),
-        y = c(-10,-11),
-        type = 'scatter',
-        mode = 'lines',
-        line = list(color = winterColormap[125], width = 2),
-        name = paste0("Group 1: ", nb1, " members of age ", age1)
-      )%>%add_trace(
-        x = SIP1,
-        y = percBenefit1,
-        type = 'scatter',
-        mode = 'markers',
-        marker = list(color = colors[2] , size = 7, symbol = 'diamond'),
-        showlegend = F
-      )%>%add_trace(
-        x = SIPIndif1,
-        y = indifferenceCurve1,
-        type = 'scatter',
-        mode = 'lines',
-        line = list(color = colors[2], width = 2),
-        name = paste0("Group 1's benchmark indifference curve")
-      )
-      
-      #annotations
-      p <- p%>%add_annotations(
-        x = baseCase[1],
-        y = baseCase[2],
-        text = "Natural pricing",
-        xref = "x",
-        yref = "y",
-        showarrow = TRUE,
-        arrowhead = 1,
-        arrowwidth = 1.5,
-        ax = -10,
-        ay = -40,
-        font = list(color = "red")
-      )
-      
-      p <- add_trace(
-        p,
-        x = (grid1$smoothyX[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)], #only take some of them for plot visibility
-        y = (grid1$y[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)],
-        type = 'scatter',
-        mode = 'markers',
-        marker = list(color = "red",
-                      symbol = "line-ne-open", size = 7),
-        name = paste0("no no region group 1")
-      )%>%add_trace(
-        x = (grid1$smoothyX[noGoodIndex2])[seq(1,length(noGoodIndex2),10)], #only take some of them for plot visibility
-        y = (grid1$y[noGoodIndex2])[seq(1,length(noGoodIndex2),10)],
-        type = 'scatter',
-        mode = 'markers',
-        marker = list(color = "red",
-                      symbol = "line-nw-open", size = 7),
-        name = paste0("no no region group 2")
-      )
-      
-      
-      # Final layout
-      p <- layout(
-        p,
-        font = list(family = fontType),
-        xaxis = list(title = list(text = "SIP",
-                                  standoff = 5),
-                     range = c(range(c(grid1$smoothyX,grid2$smoothyX))*c(.97,1.005)),
-                     titlefont = axisFont,
-                     tickfont = list(size = 12),
-                     ticks    = "outside",
-                     ticklen  = 8,
-                     showline = TRUE, mirror = TRUE, zeroline = FALSE),
-        yaxis = list(title = list(text = "Initial yield"),
-                     range = c(range(c(grid1$y,grid2$y))+c(-.01,.05)),
-                     titlefont = axisFont,
-                     tickfont = list(size = 12),
-                     ticks    = "outside",
-                     ticklen  = 8,
-                     showline = TRUE, mirror = TRUE, zeroline = FALSE),
-        legend = list(x = 0.02, y = .98,
-                      xanchor = "left",
-                      yanchor = "top",
-                      font = legendFont,
-                      bordercolor = "black", # Set the legend border color
-                      borderwidth = 1,
-                      bgcolor = "rgba(255, 255, 255, 0.9)"),
-        margin = list(t = 30, b=40)
-      )
-      p
-    }
-    save_image(p,paste0(exportPath,"benefitRiskySIPCurveGr1.pdf"),
-               width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-    browseURL(paste0(exportPath,"benefitRiskySIPCurveGr1.pdf"))
-    
-    ###gr2
-    {
-      p <- plot_ly()
-      
-      for (i in 1:ncol(backgroundindifferenceCurve2)) {
-        p <- add_trace(
-          p,
-          x = SIPIndif2,
-          y = backgroundindifferenceCurve2[,i],
-          type = 'scatter',
-          mode = 'lines',
-          line = list(color = "#d3d3d3", width = 2),
-          showlegend = F
-        )
-      }
-      #Axis Group 2
-      p <- add_trace(
-        p,
-        x = c(-10,20),
-        y = c(percBenefit2,percBenefit2),
-        type = 'scatter',
-        mode = 'lines',
-        line = list(color = 'black', width = 2, dash='dash'),
-        showlegend = F
-      )%>%add_trace(
-        p,
-        x = c(SIP2,SIP2),
-        y = c(-1000,1000),
-        type = 'scatter',
-        mode = 'lines',
-        line = list(color = 'black', width = 2, dash='dash'),
-        showlegend = F
-      )
-      
-      # group 2
-      p <- add_trace(
-        p,
-        x = grid2$smoothyX,
-        y = grid2$y,
-        type = 'scatter',
-        mode = 'markers',
-        marker = list(color = splits, colorscale = winterColormapWeights,
-                      symbol = 'circle', size = 3),
-        showlegend=F
-      )%>%add_trace(##out of frame line for legend purpose
-        x = c(-10,-11),
-        y = c(-10,-11),
-        type = 'scatter',
-        mode = 'lines',
-        line = list(color = winterColormap[125], width = 2),
-        name = paste0("Group 2: ", nb2, " members of age ", age2)
-      )%>%add_trace(
-        p,
-        x = SIP2,
-        y = percBenefit2,
-        type = 'scatter',
-        mode = 'markers',
-        marker = list(color = colors[4], size = 7, symbol = 'diamond'),
-        showlegend = F
-      )%>%add_trace(
-        p,
-        x = SIPIndif2,
-        y = indifferenceCurve2,
-        type = 'scatter',
-        mode = 'lines',
-        line = list(color = colors[4], width = 2),
-        name = paste0("Group 2's benchmark indifference curve")
-      )
-      
-      p <- p%>%add_annotations(
-        x = baseCase[3],
-        y = baseCase[4],
-        text = "Natural pricing",
-        xref = "x",
-        yref = "y",
-        showarrow = TRUE,
-        arrowhead = 1,
-        arrowwidth = 1.5,
-        ax = -10,
-        ay = -40,
-        font = list(color = "red")
-      )
-      
-      p <- add_trace(
-        p,
-        x = (grid2$smoothyX[noGoodIndex2])[seq(1,length(noGoodIndex2),10)], #only take some of them for plot visibility
-        y = (grid2$y[noGoodIndex2])[seq(1,length(noGoodIndex2),10)],
-        type = 'scatter',
-        mode = 'markers',
-        marker = list(color = "red",
-                      symbol = "line-nw-open", size = 7),
-        name = paste0("no no region group 2")
-      )%>%add_trace(
-        x = (grid2$smoothyX[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)], #only take some of them for plot visibility
-        y = (grid2$y[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)],
-        type = 'scatter',
-        mode = 'markers',
-        marker = list(color = "red",
-                      symbol = "line-ne-open", size = 7),
-        name = paste0("no no region group 1"))
-      
-      # Final layout
-      p <- layout(
-        p,
-        font = list(family = fontType),
-        xaxis = list(title = list(text = "SIP",
-                                  standoff = 5),
-                     range = c(range(c(grid1$smoothyX,grid2$smoothyX))*c(.97,1.005)),
-                     titlefont = axisFont,
-                     tickfont = list(size = 12),
-                     ticks    = "outside",
-                     ticklen  = 8,
-                     showline = TRUE, mirror = TRUE, zeroline = FALSE),
-        yaxis = list(title = list(text = "Initial yield"),
-                     range = c(range(c(grid1$y,grid2$y))+c(-.01,.05)),
-                     titlefont = axisFont,
-                     tickfont = list(size = 12),
-                     ticks    = "outside",
-                     ticklen  = 8,
-                     showline = TRUE, mirror = TRUE, zeroline = FALSE),
-        legend = list(x = 0.98, y = .98,
-                      xanchor = "right",
-                      yanchor = "top",
-                      font = legendFont,
-                      bordercolor = "black", # Set the legend border color
-                      borderwidth = 1,
-                      bgcolor = "rgba(255, 255, 255, 0.9)"),
-        margin = list(t = 30, b=40)
-      )
-      p
-    }
-    save_image(p,paste0(exportPath,"benefitRiskySIPCurveGr2.pdf"),
-               width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-    browseURL(paste0(exportPath,"benefitRiskySIPCurveGr2.pdf"))
-    
-  }
-}
-
-# Dim for contour plot
-w <- .7    #width
-h <- .25  #height
-# contour plot
-{
   goodRebalanceId <- seq_along(splits)[!seq_along(splits)%in%c(noGoodIndex1,
                                                                noGoodIndex2)]
   minY <- (grid2$y[min(goodRebalanceId)]*asset2)/(grid1$y[min(goodRebalanceId)]*asset1)
   maxY <- (grid2$y[max(goodRebalanceId)]*asset2)/(grid1$y[max(goodRebalanceId)]*asset1)
   
   currentY <- benefit2/benefit1
-  
-  # import smoothed stability when group 2 is on its own
-  name <- paste0("simulatedData/smoothedSIP_risky_nb",0,nb2,"_b",b1,b2,".rds")
-  riskStabilitySmallHomo <- readRDS(name)[,1]
   
   # get worse areas (no better area possible for both at the same time)
   {
@@ -3225,6 +3575,51 @@ h <- .25  #height
                                             byrow = T)[riskStability<=riskStabilitySmallHomo
                                                        |riskStability<=riskSmallHomo]
     
+  }
+  
+  #table info
+  {
+    totAsset <- (nb1*asset1+nb2*asset2)
+    
+    
+    benchmarkObjFn1 <- utile1
+    benchmarkObjFn2 <- utile2
+    SIP1benchmark <- riskSmallHomo
+    SIP2benchmark <- riskStabilitySmallHomo[age2Vec ==age2,
+                                            which.min(abs(benefitMultiplier-currentY))]
+    
+    pps1natural <- asset1/benefit1
+    pps2natural <- asset2/benefit2
+    naturalSIP <- riskStability[age2Vec ==age2,
+                                which.min(abs(benefitMultiplier-currentY))]
+    naturalObjFn1 <- utilityFn(naturalSIP,1/pps1natural)
+    naturalObjFn2 <- utilityFn(naturalSIP,1/pps2natural)
+    
+    
+    lowLimSIP <- riskStability[age2Vec == age2,
+                               which.min(abs(benefitMultiplier-minY))]
+    lowLimAssetRatio <- as.vector(minY*annuity(age2,.02)/annuity(age1,.02))
+    lowLimAsset1 <- totAsset/(nb1+nb2*lowLimAssetRatio)
+    lowLimAsset2 <- (totAsset-nb1*lowLimAsset1)/nb2
+    lowLimBen1 <- as.vector(lowLimAsset1/annuity(age1, .02))
+    lowLimBen2 <- as.vector(lowLimAsset2/annuity(age2, .02))
+    pps1lowLim <- asset1/lowLimBen1
+    pps2lowLim <- asset2/lowLimBen2
+    lowLimObjFn1 <- utilityFn(lowLimSIP,1/pps1lowLim)
+    lowLimObjFn2 <- utilityFn(lowLimSIP,1/pps2lowLim)
+    
+    upLimSIP <- riskStability[age2Vec == age2,
+                              which.min(abs(benefitMultiplier-maxY))]
+    upLimAssetRatio <- as.vector(maxY*annuity(age2,.02)/annuity(age1,.02))
+    upLimAsset1 <- totAsset/(nb1+nb2*upLimAssetRatio)
+    upLimAsset2 <- (totAsset-nb1*upLimAsset1)/nb2
+    upLimBen1 <- as.vector(upLimAsset1/annuity(age1, .02))
+    upLimBen2 <- as.vector(upLimAsset2/annuity(age2, .02))
+    pps1upLim <- asset1/upLimBen1
+    pps2upLim <- asset2/upLimBen2
+    upLimObjFn1 <- utilityFn(upLimSIP,1/pps1upLim)
+    upLimObjFn2 <- utilityFn(upLimSIP,1/pps2upLim)
+  
   }
   
   # contour Plot
@@ -3313,6 +3708,395 @@ h <- .25  #height
   save_image(p,paste0(exportPath,"SIPContourRiskyPostUtilReallocation",nb1,nb2,".pdf"),
              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
   browseURL(paste0(exportPath,"SIPContourRiskyPostUtilReallocation",nb1,nb2,".pdf"))
+}
+
+
+w <- .8    #width
+h <- .2  #height
+# utility plot (plot not used)
+{
+#   asset1 <- as.vector(benefit1*annuity(age1,.02))
+#   asset2 <- as.vector(benefit2*annuity(age2,.02))
+#   
+#   percBenefit1 <- benefit1/asset1
+#   percBenefit2 <- benefit2/asset2
+#   
+#   
+#   # import base stability when group 1 is on its own
+#   riskSmallHomo <- readRDS(paste0("simulatedData/BaseRisk_risky_", 
+#                                   age1,"_",nb1,".rds"))
+#   
+#   # import smoothed stability surface
+#   name <- paste0("simulatedData/smoothedSIP_risky_nb",nb1,nb2,"_b",b1,b2,".rds")
+#   riskStability <- readRDS(name)
+#   
+#   # import smoothed stability when group 2 is on its own
+#   name <- paste0("simulatedData/smoothedSIP_risky_nb",0,nb2,"_b",b1,b2,".rds")
+#   riskStabilitySmallHomo <- readRDS(name)[,1]
+#   
+#   
+#   age2Vec <- seq(55, 75, by = .1)
+#   benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 101))
+#   
+#   SIP1 <- riskSmallHomo
+#   SIP2 <- riskStabilitySmallHomo[age2==age2Vec]
+#   
+#   
+#   utile1 <- utilityFn(SIP1,percBenefit1, alpha)
+#   SIPIndif1 <- seq(1,30,.5)
+#   indifferenceCurve1 <- utilityCurve(utile1,SIPIndif1, alpha)
+#   
+#   utile2 <- utilityFn(SIP2,percBenefit2, alpha)
+#   SIPIndif2 <- seq(1,30,.5)
+#   indifferenceCurve2 <- utilityCurve(utile2,SIPIndif2, alpha)
+#   
+#   baseSplit <- (asset1*nb1)/(asset1*nb1+asset2*nb2)
+#   baseCase <- meanVarMatrix(nb1 = nb1, age1 = age1,
+#                             asset1 = asset1,
+#                             nb2 = nb2, age2 = age2,
+#                             asset2 = asset2,
+#                             matSIP = riskStability,
+#                             assetSplit = baseSplit)
+#   #background indifference
+#   {
+#     utileVec1 <- utile1+ seq(-ceiling(utile1),2, by = 0.05)
+#     backgroundindifferenceCurve1 <- sapply(utileVec1,
+#                                            function(x) utilityCurve(x,SIPIndif1,
+#                                                                     alpha))
+#     
+#     utileVec2 <- utile2+ seq(-ceiling(utile2),2, by = 0.05)
+#     backgroundindifferenceCurve2 <- sapply(utileVec2,
+#                                            function(x) utilityCurve(x,SIPIndif2,
+#                                                                     alpha))
+#   }
+#   
+#   
+#   splits <- seq(0.01,.99,0.001)
+#   traceVec <- sapply(splits, function(a)  meanVarMatrix(nb1 = nb1, age1 = age1,
+#                                                         asset1 = asset1,
+#                                                         nb2 = nb2, age2 = age2,
+#                                                         asset2 = asset2,
+#                                                         matSIP = riskStability,
+#                                                         assetSplit = a))
+#   # Create grid
+#   grid1 <- list(x = traceVec[1,], y = traceVec[2,], splits = splits)
+#   #fit model
+#   gam_fit1 <- gam(x ~ te(y, k=20), data = grid1)
+#   summary(gam_fit1)
+#   grid1$smoothyX <- predict(gam_fit1, newdata = grid1)
+#   # Create grid
+#   grid2 <- list(x = traceVec[3,], y = traceVec[4,], splits = splits)
+#   #fit model
+#   gam_fit2 <- gam(x ~ te(y, k=20), data = grid2)
+#   summary(gam_fit2)
+#   grid2$smoothyX <- predict(gam_fit2, newdata = grid2)
+#   
+#   #get worst points
+#   {
+#     #extend indifference curve (check for all benefit level of SIP curve)
+#     indifferenceCurve1Extended <- utilityCurve(utile1,grid1$smoothyX,alpha)
+#     indifferenceCurve2Extended <- utilityCurve(utile2,grid2$smoothyX,alpha)
+#     
+#     #compare for all benefit level
+#     diff1 <- grid1$y - indifferenceCurve1Extended
+#     diff2 <- grid2$y - indifferenceCurve2Extended
+#     
+#     noGoodIndex1 <- which(diff1<=0)
+#     noGoodIndex2 <- which(diff2<=0)
+#     
+#   }
+#   
+#   ##plot split in 2
+#   {
+#     #color setup
+#     {
+#       winterColormap <- c(rgb(0,(0:256)/256,(1-((0:256)/256))*.5+.5))
+#       normalized_positions <- seq(0, 1, length.out = length(winterColormap))
+#       winterColormapWeights <- lapply(
+#         seq_along(winterColormap), 
+#         function(i) {
+#           list(normalized_positions[i], winterColormap[i])
+#         }
+#       )
+#       
+#       rgbSOA <- matrix(c(2,77,124,186,191,51,119,196,213,253,206,7,210,49,56,1,1,1, 255,255,255), byrow = TRUE, ncol = 3)/255
+#       colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
+#       colors <- rep(colors, length.out = 10)  # ensure enough colors
+#     }
+#     
+#     ###gr1
+#     {
+#       #plot
+#       p <- plot_ly()
+#       
+#       for (i in 1:ncol(backgroundindifferenceCurve1)) {
+#         p <- add_trace(
+#           p,
+#           x = SIPIndif1,
+#           y = backgroundindifferenceCurve1[,i],
+#           type = 'scatter',
+#           mode = 'lines',
+#           line = list(color = "#d3d3d3", width = 2),
+#           showlegend = F
+#         )
+#       }
+#       #Axis Group 1
+#       p <- add_trace(
+#         p,
+#         x = c(-10,20),
+#         y = c(percBenefit1,percBenefit1),
+#         type = 'scatter',
+#         mode = 'lines',
+#         line = list(color = 'black', width = 2, dash='dash'),
+#         showlegend = F
+#       )%>%add_trace(
+#         p,
+#         x = c(SIP1,SIP1),
+#         y = c(-1000,1000),
+#         type = 'scatter',
+#         mode = 'lines',
+#         line = list(color = 'black', width = 2, dash='dash'),
+#         showlegend = F
+#       )
+#       
+#       # group 1
+#       p <- add_trace(
+#         p,
+#         x = grid1$smoothyX,
+#         y = grid1$y,
+#         type = 'scatter',
+#         mode = 'markers',
+#         marker = list(color = splits, colorscale = winterColormapWeights,
+#                       symbol = 'circle', size = 3),
+#         showlegend = F
+#       )%>%add_trace(##out of frame line for legend purpose
+#         x = c(-10,-11),
+#         y = c(-10,-11),
+#         type = 'scatter',
+#         mode = 'lines',
+#         line = list(color = winterColormap[125], width = 2),
+#         name = paste0("Group 1: ", nb1, " members of age ", age1)
+#       )%>%add_trace(
+#         x = SIP1,
+#         y = percBenefit1,
+#         type = 'scatter',
+#         mode = 'markers',
+#         marker = list(color = colors[2] , size = 7, symbol = 'diamond'),
+#         showlegend = F
+#       )%>%add_trace(
+#         x = SIPIndif1,
+#         y = indifferenceCurve1,
+#         type = 'scatter',
+#         mode = 'lines',
+#         line = list(color = colors[2], width = 2),
+#         name = paste0("Group 1's benchmark indifference curve")
+#       )
+#       
+#       #annotations
+#       p <- p%>%add_annotations(
+#         x = baseCase[1],
+#         y = baseCase[2],
+#         text = "Natural pricing",
+#         xref = "x",
+#         yref = "y",
+#         showarrow = TRUE,
+#         arrowhead = 1,
+#         arrowwidth = 1.5,
+#         ax = -10,
+#         ay = -40,
+#         font = list(color = "red")
+#       )
+#       
+#       p <- add_trace(
+#         p,
+#         x = (grid1$smoothyX[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)], #only take some of them for plot visibility
+#         y = (grid1$y[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)],
+#         type = 'scatter',
+#         mode = 'markers',
+#         marker = list(color = "red",
+#                       symbol = "line-ne-open", size = 7),
+#         name = paste0("no no region group 1")
+#       )%>%add_trace(
+#         x = (grid1$smoothyX[noGoodIndex2])[seq(1,length(noGoodIndex2),10)], #only take some of them for plot visibility
+#         y = (grid1$y[noGoodIndex2])[seq(1,length(noGoodIndex2),10)],
+#         type = 'scatter',
+#         mode = 'markers',
+#         marker = list(color = "red",
+#                       symbol = "line-nw-open", size = 7),
+#         name = paste0("no no region group 2")
+#       )
+#       
+#       
+#       # Final layout
+#       p <- layout(
+#         p,
+#         font = list(family = fontType),
+#         xaxis = list(title = list(text = "SIP",
+#                                   standoff = 5),
+#                      range = c(range(c(grid1$smoothyX,grid2$smoothyX))*c(.97,1.005)),
+#                      titlefont = axisFont,
+#                      tickfont = list(size = 12),
+#                      ticks    = "outside",
+#                      ticklen  = 8,
+#                      showline = TRUE, mirror = TRUE, zeroline = FALSE),
+#         yaxis = list(title = list(text = "Initial yield"),
+#                      range = c(range(c(grid1$y,grid2$y))+c(-.01,.05)),
+#                      titlefont = axisFont,
+#                      tickfont = list(size = 12),
+#                      ticks    = "outside",
+#                      ticklen  = 8,
+#                      showline = TRUE, mirror = TRUE, zeroline = FALSE),
+#         legend = list(x = 0.02, y = .98,
+#                       xanchor = "left",
+#                       yanchor = "top",
+#                       font = legendFont,
+#                       bordercolor = "black", # Set the legend border color
+#                       borderwidth = 1,
+#                       bgcolor = "rgba(255, 255, 255, 0.9)"),
+#         margin = list(t = 30, b=40)
+#       )
+#       p
+#     }
+#     # save_image(p,paste0(exportPath,"benefitRiskySIPCurveGr1.pdf"),
+#     #            width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+#     # browseURL(paste0(exportPath,"benefitRiskySIPCurveGr1.pdf"))
+#     
+#     ###gr2
+#     {
+#       p <- plot_ly()
+#       
+#       for (i in 1:ncol(backgroundindifferenceCurve2)) {
+#         p <- add_trace(
+#           p,
+#           x = SIPIndif2,
+#           y = backgroundindifferenceCurve2[,i],
+#           type = 'scatter',
+#           mode = 'lines',
+#           line = list(color = "#d3d3d3", width = 2),
+#           showlegend = F
+#         )
+#       }
+#       #Axis Group 2
+#       p <- add_trace(
+#         p,
+#         x = c(-10,20),
+#         y = c(percBenefit2,percBenefit2),
+#         type = 'scatter',
+#         mode = 'lines',
+#         line = list(color = 'black', width = 2, dash='dash'),
+#         showlegend = F
+#       )%>%add_trace(
+#         p,
+#         x = c(SIP2,SIP2),
+#         y = c(-1000,1000),
+#         type = 'scatter',
+#         mode = 'lines',
+#         line = list(color = 'black', width = 2, dash='dash'),
+#         showlegend = F
+#       )
+#       
+#       # group 2
+#       p <- add_trace(
+#         p,
+#         x = grid2$smoothyX,
+#         y = grid2$y,
+#         type = 'scatter',
+#         mode = 'markers',
+#         marker = list(color = splits, colorscale = winterColormapWeights,
+#                       symbol = 'circle', size = 3),
+#         showlegend=F
+#       )%>%add_trace(##out of frame line for legend purpose
+#         x = c(-10,-11),
+#         y = c(-10,-11),
+#         type = 'scatter',
+#         mode = 'lines',
+#         line = list(color = winterColormap[125], width = 2),
+#         name = paste0("Group 2: ", nb2, " members of age ", age2)
+#       )%>%add_trace(
+#         p,
+#         x = SIP2,
+#         y = percBenefit2,
+#         type = 'scatter',
+#         mode = 'markers',
+#         marker = list(color = colors[4], size = 7, symbol = 'diamond'),
+#         showlegend = F
+#       )%>%add_trace(
+#         p,
+#         x = SIPIndif2,
+#         y = indifferenceCurve2,
+#         type = 'scatter',
+#         mode = 'lines',
+#         line = list(color = colors[4], width = 2),
+#         name = paste0("Group 2's benchmark indifference curve")
+#       )
+#       
+#       p <- p%>%add_annotations(
+#         x = baseCase[3],
+#         y = baseCase[4],
+#         text = "Natural pricing",
+#         xref = "x",
+#         yref = "y",
+#         showarrow = TRUE,
+#         arrowhead = 1,
+#         arrowwidth = 1.5,
+#         ax = -10,
+#         ay = -40,
+#         font = list(color = "red")
+#       )
+#       
+#       p <- add_trace(
+#         p,
+#         x = (grid2$smoothyX[noGoodIndex2])[seq(1,length(noGoodIndex2),10)], #only take some of them for plot visibility
+#         y = (grid2$y[noGoodIndex2])[seq(1,length(noGoodIndex2),10)],
+#         type = 'scatter',
+#         mode = 'markers',
+#         marker = list(color = "red",
+#                       symbol = "line-nw-open", size = 7),
+#         name = paste0("no no region group 2")
+#       )%>%add_trace(
+#         x = (grid2$smoothyX[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)], #only take some of them for plot visibility
+#         y = (grid2$y[noGoodIndex1])[seq(length(noGoodIndex1),1,-10)],
+#         type = 'scatter',
+#         mode = 'markers',
+#         marker = list(color = "red",
+#                       symbol = "line-ne-open", size = 7),
+#         name = paste0("no no region group 1"))
+#       
+#       # Final layout
+#       p <- layout(
+#         p,
+#         font = list(family = fontType),
+#         xaxis = list(title = list(text = "SIP",
+#                                   standoff = 5),
+#                      range = c(range(c(grid1$smoothyX,grid2$smoothyX))*c(.97,1.005)),
+#                      titlefont = axisFont,
+#                      tickfont = list(size = 12),
+#                      ticks    = "outside",
+#                      ticklen  = 8,
+#                      showline = TRUE, mirror = TRUE, zeroline = FALSE),
+#         yaxis = list(title = list(text = "Initial yield"),
+#                      range = c(range(c(grid1$y,grid2$y))+c(-.01,.05)),
+#                      titlefont = axisFont,
+#                      tickfont = list(size = 12),
+#                      ticks    = "outside",
+#                      ticklen  = 8,
+#                      showline = TRUE, mirror = TRUE, zeroline = FALSE),
+#         legend = list(x = 0.98, y = .98,
+#                       xanchor = "right",
+#                       yanchor = "top",
+#                       font = legendFont,
+#                       bordercolor = "black", # Set the legend border color
+#                       borderwidth = 1,
+#                       bgcolor = "rgba(255, 255, 255, 0.9)"),
+#         margin = list(t = 30, b=40)
+#       )
+#       p
+#     }
+#     # save_image(p,paste0(exportPath,"benefitRiskySIPCurveGr2.pdf"),
+#     #            width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+#     # browseURL(paste0(exportPath,"benefitRiskySIPCurveGr2.pdf"))
+#     
+#   }
 }
 
 
