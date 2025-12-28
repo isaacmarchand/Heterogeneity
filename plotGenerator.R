@@ -435,7 +435,7 @@ b1=10
         type = 'scatter',
         mode = 'lines',
         line = list(color = colors[i]),
-        name = paste0("Age:", age1[i])
+        name = paste0("Age ", age1[i])
       )
     }
     
@@ -518,7 +518,7 @@ age1 = 65
         type = 'scatter',
         mode = 'lines',
         line = list(color = colors[i]),
-        name = paste0("Age:", age2[i])
+        name = paste0("Age ", age2[i])
       )
     }
     
@@ -526,7 +526,7 @@ age1 = 65
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Number of members in group 2",
+      xaxis = list(title = list(text = "Number of members in Group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),
@@ -609,7 +609,7 @@ age2 = 65
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Number of members in group 2",
+      xaxis = list(title = list(text = "Number of members in Group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),
@@ -723,7 +723,7 @@ b2=10
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'gray'),
-      name = paste(nb1+nb2, " members from group 1"),
+      name = paste0(nb1+nb2, " members from Group 1"),
       showlegend=T
     )
     
@@ -734,7 +734,7 @@ b2=10
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'black'),
-      name = paste(nb1, " members from group 1"),
+      name = paste0(nb1, " members from Group 1"),
       showlegend=T
     )
     
@@ -742,7 +742,7 @@ b2=10
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Initial benefit of in group 2",
+      xaxis = list(title = list(text = "Initial benefit of in Group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),showgrid=FALSE,
@@ -783,7 +783,7 @@ h <- .3  #height
 
 # adjustable parameters
 nb2 <- 100       # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
-diffWealth <- c(.2, .5, 1, 2, 5) # Any amount of value from interval [.1,10], Benefit of group 2 compared to group 1
+diffWealth <- c(.2, .5, 1, 2, 5) # Any amount of value from interval [.1,10], Benefit of Group 2 compared to group 1
 
 # not adjustable (for now)
 age1 <- 65 
@@ -843,7 +843,7 @@ b2=10
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'gray'),
-      name = paste(nb1+nb2, " members from group 1")
+      name = paste0(nb1+nb2, " members from Group 1")
     )
     
     p <- add_trace(
@@ -853,13 +853,13 @@ b2=10
       type = 'scatter',
       mode = 'lines',
       line = list(dash = 'dash', color = 'black'),
-      name = paste(nb1, " members from group 1")
+      name = paste0(nb1, " members from Group 1")
     )
     # Final layout
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Age of members in group 2",
+      xaxis = list(title = list(text = "Age of members in Group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),
@@ -992,7 +992,7 @@ b2=10
         font = list(family = fontType),
         plot_bgcolor = "lightgrey",   # uniform background color
         paper_bgcolor = "white",  # outside background
-        xaxis = list(title = list(text = "Age of members in group 2",
+        xaxis = list(title = list(text = "Age of members in Group 2",
                                   standoff = 5),
                      showgrid = FALSE,
                      range = c(min(df$age2), max(df$age2)),
@@ -1002,7 +1002,7 @@ b2=10
                      ticklen  = 8,
                      showline = TRUE, mirror = TRUE, zeroline = FALSE
         ),
-        yaxis = list(title = list(text = "Initial benefit of group 2",
+        yaxis = list(title = list(text = "Initial benefit of Group 2",
                                   standoff = 5),
                      type = "log",
                      showgrid = FALSE,
@@ -1033,7 +1033,7 @@ w <- .8    #width
 h <- .3  #height
 
 # adjustable parameters
-nb2 <- 100     # 50, 100 and 200 available for all age1.
+nb2 <- 200     # 50, 100 and 200 available for all age1.
 
 # not adjustable (for now)
 age1 <- 65 
@@ -1112,7 +1112,7 @@ b2=10
         font = list(family = fontType),
         plot_bgcolor = "lightgrey",   # uniform background color
         paper_bgcolor = "white",  # outside background
-        xaxis = list(title = list(text = "Age of members in group 2",
+        xaxis = list(title = list(text = "Age of members in Group 2",
                                   standoff = 5),
                      showgrid = FALSE,
                      range = c(min(df$age2), max(df$age2)),
@@ -1122,7 +1122,7 @@ b2=10
                      ticklen  = 8,
                      showline = TRUE, mirror = TRUE, zeroline = FALSE
         ),
-        yaxis = list(title = list(text = "Initial benefit of group 2",
+        yaxis = list(title = list(text = "Initial benefit of Group 2",
                                   standoff = 5),
                      type = "log",
                      showgrid = FALSE,
@@ -1248,7 +1248,7 @@ b2=10
         font = list(family = fontType),
         plot_bgcolor = "lightgrey",   # uniform background color
         paper_bgcolor = "white",  # outside background
-        xaxis = list(title = list(text = "Age of members in group 2",
+        xaxis = list(title = list(text = "Age of members in Group 2",
                                   standoff = 5),
                      showgrid = FALSE,
                      range = c(min(df$age2), max(df$age2)),
@@ -1258,7 +1258,7 @@ b2=10
                      ticklen  = 8,
                      showline = TRUE, mirror = TRUE, zeroline = FALSE
         ),
-        yaxis = list(title = list(text = "Initial benefit of group 2",
+        yaxis = list(title = list(text = "Initial benefit of Group 2",
                                   standoff = 5),
                      type = "log",
                      showgrid = FALSE,
@@ -1372,7 +1372,7 @@ b2=10
         font = list(family = fontType),
         plot_bgcolor = "lightgrey",   # uniform background color
         paper_bgcolor = "white",  # outside background
-        xaxis = list(title = list(text = "Age of members in group 2",
+        xaxis = list(title = list(text = "Age of members in Group 2",
                                   standoff = 5),
                      showgrid = FALSE,
                      range = c(min(df$age2), max(df$age2)),
@@ -1382,7 +1382,7 @@ b2=10
                      ticklen  = 8,
                      showline = TRUE, mirror = TRUE, zeroline = FALSE
         ),
-        yaxis = list(title = list(text = "Initial benefit of group 2",
+        yaxis = list(title = list(text = "Initial benefit of Group 2",
                                   standoff = 5),
                      type = "log",
                      showgrid = FALSE,
@@ -1415,7 +1415,7 @@ b2=10
 
 ####### Fig 13:SIP Different m Parameter Mortality ########
 #dimensions as percentage of page
-w <- 1    #width
+w <- .8    #width
 h <- .3  #height
 
 nb2 <- 100 #no other option
@@ -1434,7 +1434,7 @@ nb1 <- 100 #no other option
     # adjustable parameters
     nb2 <- 100       # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
     age1 <- 65      # only 60, 65 and 70 available
-    diff_b2 <- c(6, 8, 10, 12, 14) # Any amount of value from interval [.1,10], Benefit of group 2 compared to group 1
+    diff_b2 <- c(6, 8, 10, 12, 14) # Any amount of value from interval [.1,10], Benefit of Group 2 compared to group 1
     
     nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500)
     
@@ -1445,58 +1445,58 @@ nb1 <- 100 #no other option
         # get wealth slices
         age2 <- seq(55, 75, by = .1)
         colMultiplier <- sapply(diff_b2, function(x)which.min(abs(b2-x)))
-        slices <- SIP_smooth[,colMultiplier]
+        slices <- SIP[,colMultiplier]
       }
       
       #plot w.r.t m
       {
-        colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
-        colors <- rep(colors, length.out = ncol(slices))  # ensure enough colors
-        p <- plot_ly() 
-        
-        # Add each column of slices as a separate trace
-        for (i in 1:ncol(slices)) {
-          p <- add_trace(
-            p,
-            x = mVec,
-            y = slices[, i],
-            type = 'scatter',
-            mode = 'lines',
-            line = list(color = colors[i]),
-            name = paste0("<i>b<sub>2</sub></i> = ", diff_b2[i])
-          )
-        }
-        # Final layout
-        p <- layout(
-          p,
-          font = list(family = fontType),
-          xaxis = list(title = list(text = "Parameter m for members in group 2",
-                                    standoff = 5),
-                       titlefont = axisFont,
-                       tickfont = list(size = 12),
-                       ticks    = "outside",
-                       ticklen  = 8,
-                       showline = TRUE, mirror = TRUE, zeroline = FALSE),
-          yaxis = list(title = list(text = "Stable income period"),
-                       titlefont = axisFont,
-                       tickfont = list(size = 12),
-                       ticks    = "outside",
-                       ticklen  = 8,
-                       showline = TRUE, mirror = TRUE, zeroline = FALSE),
-          legend = list(x = 0.02, y = .98,
-                        xanchor = "left",
-                        yanchor = "top",
-                        font = legendFont,
-                        bordercolor = "black", # Set the legend border color
-                        borderwidth = 1,
-                        bgcolor = "rgba(255, 255, 255, 0.9)"),
-          margin = list(t = 30, b=40)
-        )
-        p
+      #   colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
+      #   colors <- rep(colors, length.out = ncol(slices))  # ensure enough colors
+      #   p <- plot_ly() 
+      #   
+      #   # Add each column of slices as a separate trace
+      #   for (i in 1:ncol(slices)) {
+      #     p <- add_trace(
+      #       p,
+      #       x = mVec,
+      #       y = slices[, i],
+      #       type = 'scatter',
+      #       mode = 'lines',
+      #       line = list(color = colors[i]),
+      #       name = paste0("<i>b<sub>2</sub></i> = ", diff_b2[i])
+      #     )
+      #   }
+      #   # Final layout
+      #   p <- layout(
+      #     p,
+      #     font = list(family = fontType),
+      #     xaxis = list(title = list(text = "Parameter m for members in Group 2",
+      #                               standoff = 5),
+      #                  titlefont = axisFont,
+      #                  tickfont = list(size = 12),
+      #                  ticks    = "outside",
+      #                  ticklen  = 8,
+      #                  showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      #     yaxis = list(title = list(text = "Stable income period"),
+      #                  titlefont = axisFont,
+      #                  tickfont = list(size = 12),
+      #                  ticks    = "outside",
+      #                  ticklen  = 8,
+      #                  showline = TRUE, mirror = TRUE, zeroline = FALSE),
+      #     legend = list(x = 0.02, y = .98,
+      #                   xanchor = "left",
+      #                   yanchor = "top",
+      #                   font = legendFont,
+      #                   bordercolor = "black", # Set the legend border color
+      #                   borderwidth = 1,
+      #                   bgcolor = "rgba(255, 255, 255, 0.9)"),
+      #     margin = list(t = 30, b=40)
+      #   )
+      #   p
       }
-      save_image(p,paste0(exportPath,"SIPHeteMortDist_m.pdf"),
-                 width = w/2*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-      browseURL(paste0(exportPath,"SIPHeteMortDist_m.pdf"))
+      # save_image(p,paste0(exportPath,"SIPHeteMortDist_m.pdf"),
+      #            width = w/2*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+      # browseURL(paste0(exportPath,"SIPHeteMortDist_m.pdf"))
       
       #plot w.r.t age
       {
@@ -1520,7 +1520,7 @@ nb1 <- 100 #no other option
         p <- layout(
           p,
           font = list(family = fontType),
-          xaxis = list(title = list(text = "Age of members in group 2",
+          xaxis = list(title = list(text = "Age of members in Group 2",
                                     standoff = 5),
                        titlefont = axisFont,
                        tickfont = list(size = 12),
@@ -1545,7 +1545,7 @@ nb1 <- 100 #no other option
         p
       }
       save_image(p,paste0(exportPath,"SIPHeteMortDist_age.pdf"),
-                 width = w/2*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+                 width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
       browseURL(paste0(exportPath,"SIPHeteMortDist_age.pdf"))
     }
   }
@@ -1599,7 +1599,7 @@ nb2 <- rev(nb1)
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Number of members in group 2",
+      xaxis = list(title = list(text = "Number of members in Group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),
@@ -1682,7 +1682,7 @@ nb2 <- rev(nb1)
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Number of members in group 2",
+      xaxis = list(title = list(text = "Number of members in Group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),
@@ -1861,7 +1861,7 @@ b2=10
         font = list(family = fontType),
         plot_bgcolor = "lightgrey",   # uniform background color
         paper_bgcolor = "white",  # outside background
-        xaxis = list(title = list(text = "Age of members in group 2",
+        xaxis = list(title = list(text = "Age of members in Group 2",
                                   standoff = 5),
                      showgrid = FALSE,
                      range = c(min(df$age2), max(df$age2)),
@@ -1871,7 +1871,7 @@ b2=10
                      ticklen  = 8,
                      showline = TRUE, mirror = TRUE, zeroline = FALSE
         ),
-        yaxis = list(title = list(text = "Initial benefit of group 2",
+        yaxis = list(title = list(text = "Initial benefit of Group 2",
                                   standoff = 5),
                      type = "log",
                      showgrid = FALSE,
@@ -2040,7 +2040,7 @@ b2=14
         font = list(family = fontType),
         plot_bgcolor = "lightgrey",   # uniform background color
         paper_bgcolor = "white",  # outside background
-        xaxis = list(title = list(text = "Age of members in group 2",
+        xaxis = list(title = list(text = "Age of members in Group 2",
                                   standoff = 5),
                      showgrid = FALSE,
                      range = c(min(df$age2), max(df$age2)),
@@ -2050,7 +2050,7 @@ b2=14
                      ticklen  = 8,
                      showline = TRUE, mirror = TRUE, zeroline = FALSE
         ),
-        yaxis = list(title = list(text = "Initial benefit of group 2",
+        yaxis = list(title = list(text = "Initial benefit of Group 2",
                                   standoff = 5),
                      type = "log",
                      showgrid = FALSE,
@@ -2134,7 +2134,7 @@ b2 = 10
         type = 'scatter',
         mode = 'lines',
         line = list(color = colors[i]),
-        name = paste0("Age:", age2[i])
+        name = paste0("Age ", age2[i])
       )
     }
     
@@ -2142,7 +2142,7 @@ b2 = 10
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Number of members in group 2",
+      xaxis = list(title = list(text = "Number of members in Group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),
@@ -2244,7 +2244,7 @@ b2 = 14
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Number of members in group 2",
+      xaxis = list(title = list(text = "Number of members in Group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),
@@ -2286,7 +2286,7 @@ h <- .3  #height
 # adjustable parameters
 nb2 <- 100      # 50, 100 and 200 available for all age1. 
 age2 <- c(60,65,70) # Any amount of value from interval [55,75]
-diffWealth <- c(.2, .5, 1, 2, 5) # Any amount of value from interval [.1,10], Benefit of group 2 compared to group 1
+diffWealth <- c(.2, .5, 1, 2, 5) # Any amount of value from interval [.1,10], Benefit of Group 2 compared to group 1
 
 
 # not adjustable (for now)
@@ -2423,7 +2423,7 @@ b2=14
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Initial benefit of in group 2",
+      xaxis = list(title = list(text = "Initial benefit of in Group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),showgrid=FALSE,
@@ -2512,7 +2512,7 @@ b2=14
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Age of members in group 2",
+      xaxis = list(title = list(text = "Age of members in Group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),
@@ -2733,7 +2733,7 @@ b2 = 10
         plot_bgcolor = "lightgrey",
         paper_bgcolor = "white",
         xaxis = list(
-          title = list(text = "Age of members in group 2", standoff = 5),
+          title = list(text = "Age of members in Group 2", standoff = 5),
           showgrid = FALSE,
           range = c(min(df$age2Vec), max(df$age2Vec)),
           titlefont = axisFont,
@@ -2743,7 +2743,7 @@ b2 = 10
           showline = TRUE, mirror = TRUE, zeroline = FALSE
         ),
         yaxis = list(
-          title = list(text = "Initial benefit of group 2", standoff = 5),
+          title = list(text = "Initial benefit of Group 2", standoff = 5),
           type = "log",
           showgrid = FALSE,
           range = log10(c(min(df$benefitMultiplier), max(df$benefitMultiplier))),
@@ -3003,7 +3003,7 @@ b2=10
         font = list(family = fontType),
         plot_bgcolor = "lightgrey",   # uniform background color
         paper_bgcolor = "white",  # outside background
-        xaxis = list(title = list(text = "Age of members in group 2",
+        xaxis = list(title = list(text = "Age of members in Group 2",
                                   standoff = 5),
                      showgrid = FALSE,
                      range = c(min(df$age2Vec), max(df$age2Vec)),
@@ -3013,7 +3013,7 @@ b2=10
                      ticklen  = 8,
                      showline = TRUE, mirror = TRUE, zeroline = FALSE
         ),
-        yaxis = list(title = list(text = "Initial benefit of group 2",
+        yaxis = list(title = list(text = "Initial benefit of Group 2",
                                   standoff = 5),
                      type = "log",
                      showgrid = FALSE,
@@ -3678,7 +3678,7 @@ b2=10
         font = list(family = fontType),
         plot_bgcolor = "lightgrey",   # uniform background color
         paper_bgcolor = "white",  # outside background
-        xaxis = list(title = list(text = "Age of members in group 2",
+        xaxis = list(title = list(text = "Age of members in Group 2",
                                   standoff = 5),
                      showgrid = FALSE,
                      range = c(min(df$age2Vec), max(df$age2Vec)),
@@ -3688,7 +3688,7 @@ b2=10
                      ticklen  = 8,
                      showline = TRUE, mirror = TRUE, zeroline = FALSE
         ),
-        yaxis = list(title = list(text = "Initial benefit of group 2",
+        yaxis = list(title = list(text = "Initial benefit of Group 2",
                                   standoff = 5),
                      type = "log",
                      showgrid = FALSE,
@@ -4288,7 +4288,7 @@ benefit2 <- 500
         plot_bgcolor = "lightgrey",
         paper_bgcolor = "white",
         xaxis = list(
-          title = list(text = "Age of members in group 2", standoff = 5),
+          title = list(text = "Age of members in Group 2", standoff = 5),
           showgrid = FALSE,
           range = c(min(df$age2vec), max(df$age2vec)),
           titlefont = axisFont,
@@ -4298,7 +4298,7 @@ benefit2 <- 500
           showline = TRUE, mirror = TRUE, zeroline = FALSE
         ),
         yaxis = list(
-          title = list(text = "Initial benefit of group 2", standoff = 5),
+          title = list(text = "Initial benefit of Group 2", standoff = 5),
           type = "log",
           showgrid = FALSE,
           range = log10(c(min(df$benefitMultiplier), max(df$benefitMultiplier))),
@@ -4913,7 +4913,7 @@ h <- .25  #height
         plot_bgcolor = "lightgrey",
         paper_bgcolor = "white",
         xaxis = list(
-          title = list(text = "Age of members in group 2", standoff = 5),
+          title = list(text = "Age of members in Group 2", standoff = 5),
           showgrid = FALSE,
           range = c(min(df$age2vec), max(df$age2vec)),
           titlefont = axisFont,
@@ -4923,7 +4923,7 @@ h <- .25  #height
           showline = TRUE, mirror = TRUE, zeroline = FALSE
         ),
         yaxis = list(
-          title = list(text = "Initial benefit of group 2", standoff = 5),
+          title = list(text = "Initial benefit of Group 2", standoff = 5),
           type = "log",
           showgrid = FALSE,
           range = log10(c(min(df$benefitMultiplier), max(df$benefitMultiplier))),
@@ -5055,7 +5055,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
         font = list(family = fontType),
         plot_bgcolor = "lightgrey",   # uniform background color
         paper_bgcolor = "white",  # outside background
-        xaxis = list(title = list(text = "Age of members in group 2",
+        xaxis = list(title = list(text = "Age of members in Group 2",
                                   standoff = 5),
                      showgrid = FALSE,
                      range = c(min(df$age2), max(df$age2)),
@@ -5065,7 +5065,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
                      ticklen  = 8,
                      showline = TRUE, mirror = TRUE, zeroline = FALSE
         ),
-        yaxis = list(title = list(text = "Initial benefit of group 2",
+        yaxis = list(title = list(text = "Initial benefit of Group 2",
                                   standoff = 5),
                      type = "log",
                      showgrid = FALSE,
@@ -5184,7 +5184,7 @@ age1 <- 65      #only 60, 65 and 70 available
         font = list(family = fontType),
         plot_bgcolor = "lightgrey",   # uniform background color
         paper_bgcolor = "white",  # outside background
-        xaxis = list(title = list(text = "Age of members in group 2",
+        xaxis = list(title = list(text = "Age of members in Group 2",
                                   standoff = 5),
                      showgrid = FALSE,
                      range = c(min(df$age2), max(df$age2)),
@@ -5194,7 +5194,7 @@ age1 <- 65      #only 60, 65 and 70 available
                      ticklen  = 8,
                      showline = TRUE, mirror = TRUE, zeroline = FALSE
         ),
-        yaxis = list(title = list(text = "Initial benefit of group 2",
+        yaxis = list(title = list(text = "Initial benefit of Group 2",
                                   standoff = 5),
                      type = "log",
                      showgrid = FALSE,
@@ -5227,7 +5227,7 @@ h <- .3  #height
 # adjustable parameters
 nb2 <- 100      # 50, 100 and 200 available for all age1. Also, 5, 10, 500, 1000 available for age1=65
 age1 <- 65      # only 60, 65 and 70 available
-diffWealth <- c(.2, .5, 1, 2, 5) # Any amount of value from interval [.1,10], Benefit of group 2 compared to group 1
+diffWealth <- c(.2, .5, 1, 2, 5) # Any amount of value from interval [.1,10], Benefit of Group 2 compared to group 1
 
 nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500)
 
@@ -5308,7 +5308,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Age of members in group 2",
+      xaxis = list(title = list(text = "Age of members in Group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),
@@ -5447,7 +5447,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Initial benefit of group 2",
+      xaxis = list(title = list(text = "Initial benefit of Group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),showgrid=FALSE,
@@ -5607,7 +5607,7 @@ age2 <- c(55, 60,65,70,75)   # only 55, 60, 65, 70 and 75 available in section 5
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Number of members in group 2",
+      xaxis = list(title = list(text = "Number of members in Group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),
@@ -5688,7 +5688,7 @@ BMulti <- c(.2,.5,1,2,5) #ratio of benefit2/benefit1
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Number of members in group 2",
+      xaxis = list(title = list(text = "Number of members in Group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),
@@ -5771,7 +5771,7 @@ nb2 <- rev(nb1)
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Number of members in group 2",
+      xaxis = list(title = list(text = "Number of members in Group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),
@@ -5850,7 +5850,7 @@ nb2 <- rev(nb1)
     p <- layout(
       p,
       font = list(family = fontType),
-      xaxis = list(title = list(text = "Number of members in group 2",
+      xaxis = list(title = list(text = "Number of members in Group 2",
                                 standoff = 5),
                    titlefont = axisFont,
                    tickfont = list(size = 12),
@@ -6063,7 +6063,7 @@ nb2 <- seq(0,500,1)
                        ticks    = "outside",
                        ticklen  = 8,
                        showline = TRUE, mirror = TRUE, zeroline = FALSE),
-          yaxis = list(title = "Number of members in group 2",
+          yaxis = list(title = "Number of members in Group 2",
                        titlefont = axisFont,
                        titlefont = axisFont,
                        tickfont = list(size = 12),
@@ -6170,7 +6170,7 @@ nb2 <- seq(0,500,1)
       layout(
         font = list(family = fontType),
         scene = list(
-          xaxis = list(title = "Initial benefit of group 2",
+          xaxis = list(title = "Initial benefit of Group 2",
                        type = "log",
                        showgrid = F,
                        titlefont = axisFont,
@@ -6179,7 +6179,7 @@ nb2 <- seq(0,500,1)
                        ticks    = "outside",
                        ticklen  = 8,
                        showline = TRUE, mirror = TRUE, zeroline = FALSE),
-          yaxis = list(title = "Number of members in group 2",
+          yaxis = list(title = "Number of members in Group 2",
                        titlefont = axisFont,
                        titlefont = axisFont,
                        tickfont = list(size = 12),
@@ -6331,7 +6331,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
         font = list(family = fontType),
         plot_bgcolor = "lightgrey",   # uniform background color
         paper_bgcolor = "white",  # outside background
-        xaxis = list(title = list(text = "Age of members in group 2",
+        xaxis = list(title = list(text = "Age of members in Group 2",
                                   standoff = 5),
                      showgrid = FALSE,
                      range = c(min(df$age2), max(df$age2)),
@@ -6341,7 +6341,7 @@ nb1 <- 100      # Don't change, but some scenario available at nb1 = (10 and 500
                      ticklen  = 8,
                      showline = TRUE, mirror = TRUE, zeroline = FALSE
         ),
-        yaxis = list(title = list(text = "Initial benefit of group 2",
+        yaxis = list(title = list(text = "Initial benefit of Group 2",
                                   standoff = 5),
                      type = "log",
                      showgrid = FALSE,
@@ -6472,7 +6472,7 @@ age1 <- 65      #only 60, 65 and 70 available
         font = list(family = fontType),
         plot_bgcolor = "lightgrey",   # uniform background color
         paper_bgcolor = "white",  # outside background
-        xaxis = list(title = list(text = "Age of members in group 2",
+        xaxis = list(title = list(text = "Age of members in Group 2",
                                   standoff = 5),
                      showgrid = FALSE,
                      range = c(min(df$age2), max(df$age2)),
@@ -6482,7 +6482,7 @@ age1 <- 65      #only 60, 65 and 70 available
                      ticklen  = 8,
                      showline = TRUE, mirror = TRUE, zeroline = FALSE
         ),
-        yaxis = list(title = list(text = "Initial benefit of group 2",
+        yaxis = list(title = list(text = "Initial benefit of Group 2",
                                   standoff = 5),
                      type = "log",
                      showgrid = FALSE,
