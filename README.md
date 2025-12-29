@@ -6,11 +6,11 @@ Code used for research about heterogeneity in pension pool
 
 Contain all the figures in the paper.
 
-####Generating all the figures from the paper
+#### Generating all the figures from the paper
 
 The script can be run as a whole and all Figures should be exported in a specified directory. This export directory should be specified on line 12, right after the list of package required. A working version of Python3 is also required and the location of your python should be specified on line 15. If you don't already have python installed, the commented lines 16-20 can be used to installe it directly from R. 
 
-####Generating select figures
+#### Generating select figures
 
 The script can also be run manually to generate specific figure with or without exporting them. All the sections a separated by comment lines.
 
