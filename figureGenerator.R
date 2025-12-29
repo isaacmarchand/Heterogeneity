@@ -1,3 +1,4 @@
+####### Packages #####
 library(plotly)
 library(reshape2)
 library(RColorBrewer)
@@ -6,25 +7,30 @@ library(ggplot2)
 library(htmlwidgets)
 library(webshot)
 library(mgcv)
-reticulate::use_python("/opt/anaconda3/bin/python3")
 
+####### Export ######
+exportPath <- paste0("/Users/macbook/Library/Mobile\ Documents/com~apple~CloudDocs/School/SFU/Research/Coding/Plots/",
+                     "January8th/")
+
+reticulate::use_python("/opt/anaconda3/bin/python3")
 # ####if need to install python
 # install.packages("reticulate")
 # library(reticulate)
 # use_python(install_python())
 # py_install(c("kaleido==0.2.1", "plotly"))
 
-###### Design and export choice ####
-exportPath <- paste0("/Users/macbook/Library/Mobile\ Documents/com~apple~CloudDocs/School/SFU/Research/Coding/Plots/",
-                     "January8th/")
+####### Export design choice ####
 fontType <- 'Verdana' #'Verdana' for report 'Times New Roman' for paper
 axisFont <- list(size=15, family = fontType)
 titleFont <- list(size=30, family = fontType)
 legendFont <- list(size=12, family = fontType)
 
+#pixel wanted for full page plot
 pixelsFullWidth <- 1240*(5.5/8) #removing margins
 pixelsFullHeight <- 1754*(9.3/11) #removing margins
-###### Base functions to run first #####
+
+
+####### Base functions #####
 {
   ######Colors
   rgbSOA <- matrix(c(2,77,124,186,191,51,119,196,213,253,206,7,210,49,56,1,1,1, 255,255,255), byrow = TRUE, ncol = 3)/255
