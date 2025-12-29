@@ -1744,7 +1744,7 @@ b2=10
 {
   ##Compute riskStabilityApprox
   {
-    tic()
+    
     benefit1 <- 1000
     age2 <- seq(55, 75, by = .1)
     benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 101))
@@ -1757,7 +1757,7 @@ b2=10
                                                   b1 = b1, b2=b2)
       }
     }
-    toc()
+    
     
     # SD surface for smoothing purposes
     {
@@ -1914,7 +1914,7 @@ b2=14
 {
   ####Compute riskStabilityApprox
   {
-    tic()
+    
     benefit1 <- 1000
     age2 <- seq(55, 75, by = .1)
     benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 101))
@@ -1927,16 +1927,16 @@ b2=14
                                          b1=b1, b2=b2)
       }
     }
-    toc()
     
-    tic()
+    
+    
     SIP_SmallHomoApprox <- matrix(0,length(age2),length(benefitMultiplier))
     for (i in seq_along(age2)) {
         SIP_SmallHomoApprox[i,] <- compApproxSIP(0, nb2, age1, age2[i], 
                                                   benefit1,benefit1, 
                                                   b1=b1, b2=b2)
     }
-    toc()
+    
     
     # SD surface for smoothing purposes
     {
@@ -2101,7 +2101,7 @@ b2 = 10
     benefit1 <- 1000
     benefit2 <- benefit1
     riskStability <- matrix(0,length(age2),length(nb2))
-    tic()
+    
     for (i in seq_along(age2)) {
       riskStability[i,] <- sapply(nb2,function(n)compApproxSIP(nb1, n, age1, age2[i],
                                                                benefit1,benefit2, 
@@ -2121,7 +2121,7 @@ b2 = 10
       
       riskStability[i,] <- grid$SIP_smooth
     }
-    toc()
+    
   }
   #plot
   {
@@ -2202,7 +2202,7 @@ b2 = 14
   {
     # compute  stability surface
     riskStability <- matrix(0,length(BMulti),length(nb2))
-    tic()
+    
     for (i in seq_along(BMulti)) {
       riskStability[i,] <- sapply(nb2,function(n)compApproxSIP(nb1, n, age1, age2,
                                                                1,BMulti[i], 
@@ -2222,7 +2222,7 @@ b2 = 14
       
       riskStability[i,] <- grid$SIP_smooth
     }
-    toc()
+    
   }
   
   #plot
@@ -2303,7 +2303,7 @@ b2=14
 # Generate plot (put it in full screen before saving for better placement of legend)
 {
   {
-    tic()
+    
     benefit1 <- 1000
     age2vec <- seq(55, 75, by = .1)
     benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 101))
@@ -2316,7 +2316,7 @@ b2=14
                                          b1 = b1, b2=b2)
       }
     }
-    toc()
+    
     
     # SD surface for smoothing purposes
     {
@@ -4151,7 +4151,7 @@ benefit2 <- 500
   
   ####Compute riskStabilityApprox
   {
-    tic()
+    
     benefit1 <- 1000
     age2vec <- seq(55, 75, by = .1)
     benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 100))
@@ -4163,9 +4163,9 @@ benefit2 <- 500
                                                   benefit2[j])
       }
     }
-    toc()
     
-    tic()
+    
+    
     riskStabilitySmallHomoApprox <- matrix(0,length(age2vec),length(benefitMultiplier))
     for (i in seq_along(age2vec)) {
       for (j in seq_along(benefit2)) {
@@ -4173,7 +4173,7 @@ benefit2 <- 500
                                                            benefit2[j])
       }
     }
-    toc()
+    
     
     # SD surface for smoothing purposes
     {
@@ -4767,7 +4767,7 @@ h <- .25  #height
   maxY <- (grid2$y[max(goodRebalanceId)]*asset2)/(grid1$y[max(goodRebalanceId)]*asset1)
   ####Compute riskStabilityApprox
   {
-    tic()
+    
     benefit1 <- 1000
     age2vec <- seq(55, 75, by = .1)
     benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 100))
@@ -4779,9 +4779,9 @@ h <- .25  #height
                                                   benefit2[j])
       }
     }
-    toc()
     
-    tic()
+    
+    
     riskStabilitySmallHomoApprox <- matrix(0,length(age2vec),length(benefitMultiplier))
     for (i in seq_along(age2vec)) {
       for (j in seq_along(benefit2)) {
@@ -4789,7 +4789,7 @@ h <- .25  #height
                                                            benefit2[j])
       }
     }
-    toc()
+    
     
     # SD surface for smoothing purposes
     {

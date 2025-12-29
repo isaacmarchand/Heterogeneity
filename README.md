@@ -1,6 +1,6 @@
 # Heterogeneity
 
-Code used for research about heterogeneity in pension pool
+Code used for article ...
 
 ## figureGenerator.R
 
@@ -35,5 +35,20 @@ Almost all the data contained in the figures of section 3 and 5 comes from the p
 Folder containing all the data required to generate the figures from the paper. This data was generated using the functions in 'SIP.R'. Those SIP were pre calculated as they are estimated using simulations which can take some time to compute.
 
 ## SIP.R
+
+Contains a function to estimate the SIP using simulations with the control variate estimate introduced in Section 4 of the paper. It works for Homogeneous pools and Heterogeneous pool with 2 groups. It only works for a SIP with no upper bound on stability $\epsilon_2 = \infty$.
+
+The first section 'Create functions' contains all the function used to estimate the SIP, with SIP2Pop_CV() being the function used the estimate the SIP for a given pool. You can give to SIP2Pop_CV()
+-   (mandatory) The number of member from group 1 and 2 (nb1 and nb2)
+-   (mandatory) The age of the members from group 1 and 2 (age1 and age2)
+-   (mandatory) The initial benefit of the members from group 1 and 2 (benefit1 and benefit2)
+-   (optional) The lower stability bound $\epsilon_1$ (epsilon)
+-   (optional) The stability confidence $\beta$ (beta)
+-   (optional) The number of simulations used to estimate the SIP (nbSimul)
+-   (optional) The Gompertz law modal and dispersion parameters for group 1 and 2 (m1, b1, m2, b2)
+
+It also contains a quick example of how the function SIP2Pop_CV() can be used to compute the SIP for different level of wealth heterogeneity through benefit ratio 'y'.
+
+## SIP_risky.R
 
 ## approxSIP.R
