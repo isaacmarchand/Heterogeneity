@@ -2,24 +2,39 @@
 
 Code used for research about heterogeneity in pension pool
 
-## plotGenerator.R
+## figureGenerator.R
 
-Contain all the plot in the paper. All the sections a separated by comment lines.
+Contain all the figures in the paper.
 
-The first few section should be run first to make sure the code generating the plots can work properly. Those sections contains the following.
+####Generating all the figures from the paper
 
--   The top of the script contains the packages used for the figures generation and export.
--   It is followed ny the design and export variable for the formatting of the plots at export.
--   Then all the functions used for some of the data generated in the plot script are in one bracket.
+The script can be run as a whole and all Figures should be exported in a specified directory. This export directory should be specified on line 12, right after the list of package required. A working version of Python3 is also required and the location of your python should be specified on line 15. If you don't already have python installed, the commented lines 16-20 can be used to installe it directly from R. 
 
-The plots are separated by comments line and are ordered as presented in the paper. At the to of each plot code, some dimension formatting options are available
+####Generating select figures
 
-All the data contained in the plot comes from the pre simulated data contained in the 'simulatedData' folder.
+The script can also be run manually to generate specific figure with or without exporting them. All the sections a separated by comment lines.
 
-## functionsYoS.R
+The first few section should be run first to make sure the code generating the figures can work properly. Those sections contains the following.
 
-Contain the functions used to estimate the number of years of stability with simulations and a quick example.
+-   The 'Package' section contains the packages used for the figures generation and export.
+-   The 'Export' section contains the Export path and python3 path
+-   The 'Export design choice' section contains some general formatting for all figures and the resolution wanted for a full page figure as a baseline.
+-   The 'Base functions' section contains all the functions used for the data generated directly in the figure script.
 
-It also contain the function to approximate the number of stable years based on the approximation presented in section 11.2, it is much quicker to compute but overestimate the number of stable years.
+The Following sections separated by comments line are all the figures from the paper in order. All Figures section have the same structure:
 
-Some code to create a surface plot is also presented
+-   Dimension of the figure as a percentage of a page for the width 'w' and height 'h'. (for the export only)
+-   Some adjustable parameters (for some of the figures)
+-   In bracket, all the code required to generate the figure
+-   After hte brackets, some code to export the figures if needed
+
+Almost all the data contained in the figures of section 3 and 5 comes from the pre-simulated data contained in the 'simulatedData' folder. The data for the figures of section 4 is generated directly in the script.
+
+## simulatedData
+
+Folder containing all the data required to generate the figures from the paper. This data was generated using the functions in 'SIP.R'. Those SIP were pre calculated as they are estimated using simulations which can take some time to compute.
+
+## SIP.R
+
+## approxSIP.R
+
