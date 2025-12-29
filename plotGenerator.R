@@ -16,7 +16,7 @@ reticulate::use_python("/opt/anaconda3/bin/python3")
 
 ###### Design and export choice ####
 exportPath <- paste0("/Users/macbook/Library/Mobile\ Documents/com~apple~CloudDocs/School/SFU/Research/Coding/Plots/",
-                     "December24th/")
+                     "January8th/")
 fontType <- 'Verdana' #'Verdana' for report 'Times New Roman' for paper
 axisFont <- list(size=15, family = fontType)
 titleFont <- list(size=30, family = fontType)
@@ -1033,16 +1033,15 @@ w <- .8    #width
 h <- .3  #height
 
 # adjustable parameters
-nb2 <- 200     # 50, 100 and 200 available for all age1.
-
-# not adjustable (for now)
-age1 <- 65 
-nb1 <- 100 
-b1=10
-b2=10
+nb2 <- 200     #  100, 50 and 200 available for Fig 8-9-10 respectively.
 
 # Generate plot
 {
+  # not adjustable
+  age1 <- 65 
+  nb1 <- 100 
+  b1=10
+  b2=10
   
   # import base stability when group 1 is on its own
   riskSmallHomo <- readRDS(paste0("simulatedData/BaseRisk", 
