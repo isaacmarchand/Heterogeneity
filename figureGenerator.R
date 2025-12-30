@@ -395,10 +395,11 @@ beta <- .95       #treshhold illustrated in plot
     )%>%config(mathjax = 'cdn')
     fig
   }
-  save_image(fig,paste0(exportPath,"smoothedVSempericalSIP.pdf"),
-             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"smoothedVSempericalSIP.pdf"))
 }
+save_image(fig,paste0(exportPath,"smoothedVSempericalSIP.pdf"),
+           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+browseURL(paste0(exportPath,"smoothedVSempericalSIP.pdf"))
+
 
 ####### Fig 2:SIP Homogeneous evolution with nb1 ########
 #dimensions as percentage of page
@@ -473,10 +474,11 @@ b1=10
     )
     p
   }
-  save_image(p,paste0(exportPath,"homoSIP_Smooth.pdf"),
-             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"homoSIP_Smooth.pdf"))
 }
+save_image(p,paste0(exportPath,"homoSIP_Smooth.pdf"),
+           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+browseURL(paste0(exportPath,"homoSIP_Smooth.pdf"))
+
 
 
 
@@ -556,10 +558,10 @@ age1 = 65
     )
     p
   }
-  save_image(p,paste0(exportPath,"SIPMortalityHeteNb.pdf"),
-             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"SIPMortalityHeteNb.pdf"))
 }
+save_image(p,paste0(exportPath,"SIPMortalityHeteNb.pdf"),
+           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+browseURL(paste0(exportPath,"SIPMortalityHeteNb.pdf"))
 
 
 
@@ -639,11 +641,10 @@ age2 = 65
     )
     p
   }
-  save_image(p,paste0(exportPath,"SIPWealthHeteNb.pdf"),
-             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"SIPWealthHeteNb.pdf"))
 }
-
+save_image(p,paste0(exportPath,"SIPWealthHeteNb.pdf"),
+           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+browseURL(paste0(exportPath,"SIPWealthHeteNb.pdf"))
 
 
 
@@ -774,10 +775,10 @@ b2=10
     )
     p
   }
-  save_image(p,paste0(exportPath,"SIPWealthHeteMortality.pdf"),
-             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"SIPWealthHeteMortality.pdf"))
 }
+save_image(p,paste0(exportPath,"SIPWealthHeteMortality.pdf"),
+           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+browseURL(paste0(exportPath,"SIPWealthHeteMortality.pdf"))
 
 
 
@@ -889,10 +890,10 @@ b2=10
     )
     p
   }
-  save_image(p,paste0(exportPath,"SIPMortalityHeteWealth.pdf"),
-             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"SIPMortalityHeteWealth.pdf"))
 }
+save_image(p,paste0(exportPath,"SIPMortalityHeteWealth.pdf"),
+           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+browseURL(paste0(exportPath,"SIPMortalityHeteWealth.pdf"))
 
 
 
@@ -1025,11 +1026,10 @@ b2=10
       )
     p
   }
-  
-  save_image(p,paste0(exportPath,"SIPContour1Perspective",nb1,nb2,".pdf"),
-             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"SIPContour1Perspective",nb1,nb2,".pdf"))
 }
+save_image(p,paste0(exportPath,"SIPContour1Perspective",nb1,nb2,".pdf"),
+           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+browseURL(paste0(exportPath,"SIPContour1Perspective",nb1,nb2,".pdf"))
 
 
 
@@ -1144,10 +1144,10 @@ nb2 <- 200     #  100, 50 and 200 available for Fig 8-9-10 respectively.
       )
     p
   }
-  save_image(p,paste0(exportPath,"SIPContour2Perspective",nb1,nb2,".pdf"),
-             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"SIPContour2Perspective",nb1,nb2,".pdf"))
 }
+save_image(p,paste0(exportPath,"SIPContour2Perspective",nb1,nb2,".pdf"),
+           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+browseURL(paste0(exportPath,"SIPContour2Perspective",nb1,nb2,".pdf"))
 
 
 
@@ -1280,18 +1280,11 @@ b2=10
       )
     p
   }
-  
-  save_image(p,paste0(exportPath,"SIPContourRiskyAsset",nb1,nb2,".pdf"),
-             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"SIPContourRiskyAsset",nb1,nb2,".pdf"))
-  
-  # # other export option
-  # saveWidget(p, paste0(exportPath,"SIPContourRiskyAsset.html"), selfcontained = TRUE)
-  # webshot(paste0(exportPath,"SIPContourRiskyAsset.html"),
-  #         file   = paste0(exportPath,"SIPContourRiskyAsset.jpeg"),
-  #         vwidth = 720, vheight = 480,  # canvas size
-  #         zoom   = 3)
 }
+save_image(p,paste0(exportPath,"SIPContourRiskyAsset",nb1,nb2,".pdf"),
+           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+browseURL(paste0(exportPath,"SIPContourRiskyAsset",nb1,nb2,".pdf"))
+
 ####### Fig 12:SIP Contour Plot Both Groups' Perspective Risky Asset########
 #dimensions as percentage of page
 w <- .8    #width
@@ -1404,17 +1397,10 @@ b2=10
       )
     p
   }
-  save_image(p,paste0(exportPath,"SIPContourRiskyAsset2Perspective",nb1,nb2,".pdf"),
-             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"SIPContourRiskyAsset2Perspective",nb1,nb2,".pdf"))
-  
-  # # other export option
-  # saveWidget(p, paste0(exportPath,"SIPContourRiskyAsset2Perspective.html"), selfcontained = TRUE)
-  # webshot(paste0(exportPath,"SIPContourRiskyAsset2Perspective.html"),
-  #         file   = paste0(exportPath,"SIPContourRiskyAsset2Perspective.jpeg"),
-  #         vwidth = 720, vheight = 480,  # canvas size
-  #         zoom   = 3)
 }
+save_image(p,paste0(exportPath,"SIPContourRiskyAsset2Perspective",nb1,nb2,".pdf"),
+           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+browseURL(paste0(exportPath,"SIPContourRiskyAsset2Perspective",nb1,nb2,".pdf"))
 
 
 
@@ -1549,12 +1535,12 @@ nb1 <- 100 #no other option
         )
         p
       }
-      save_image(p,paste0(exportPath,"SIPHeteMortDist_age.pdf"),
-                 width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-      browseURL(paste0(exportPath,"SIPHeteMortDist_age.pdf"))
     }
   }
 }
+save_image(p,paste0(exportPath,"SIPHeteMortDist_age.pdf"),
+           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+browseURL(paste0(exportPath,"SIPHeteMortDist_age.pdf"))
 ####### Other:SIP Heterogeneous Wealth evolution with TOTAL participants ########
 #dimensions as percentage of page
 w <- .8    #width
@@ -1893,10 +1879,11 @@ b2=10
       )
     p
   }
-  save_image(p,paste0(exportPath,"ApproxSIPContour1Perspective",nb1,nb2,"_b",b1,b2,".pdf"),
-             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"ApproxSIPContour1Perspective",nb1,nb2,"_b",b1,b2,".pdf"))
 }
+save_image(p,paste0(exportPath,"ApproxSIPContour1Perspective",nb1,nb2,"_b",b1,b2,".pdf"),
+           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+browseURL(paste0(exportPath,"ApproxSIPContour1Perspective",nb1,nb2,"_b",b1,b2,".pdf"))
+
 ####### Fig 15:Approx SIP Contour Plot Both Groups' Perspective ########
 #dimensions as percentage of page
 w <- .8    #width
@@ -2072,10 +2059,11 @@ b2=14
       )
     p
   }
-  save_image(p,paste0(exportPath,"ApproxSIPContour2Perspective",nb1,nb2,"_b",b1,b2,".pdf"),
-             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"ApproxSIPContour2Perspective",nb1,nb2,"_b",b1,b2,".pdf"))
 }
+save_image(p,paste0(exportPath,"ApproxSIPContour2Perspective",nb1,nb2,"_b",b1,b2,".pdf"),
+           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+browseURL(paste0(exportPath,"ApproxSIPContour2Perspective",nb1,nb2,"_b",b1,b2,".pdf"))
+
 
 
 ####### Other:Approx SIP Heterogeneous Mortality evolution with nb2 ########
@@ -2779,10 +2767,10 @@ b2 = 10
       )
     p
   }
-  save_image(p,paste0(exportPath,"SIPContourPostMitigate",nb1,nb2,".pdf"),
-              width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"SIPContourPostMitigate",nb1,nb2,".pdf"))
 }
+save_image(p,paste0(exportPath,"SIPContourPostMitigate",nb1,nb2,".pdf"),
+           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+browseURL(paste0(exportPath,"SIPContourPostMitigate",nb1,nb2,".pdf"))
 
 
 ####### Fig 17:Initial Benefit and SIP Preferences #######
@@ -3035,10 +3023,10 @@ b2=10
       )
     p
   }
-  save_image(p,paste0(exportPath,"SIPContourPostUtilMitigate",nb1,nb2,".pdf"),
-             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"SIPContourPostUtilMitigate",nb1,nb2,".pdf"))
 }
+save_image(p,paste0(exportPath,"SIPContourPostUtilMitigate",nb1,nb2,".pdf"),
+           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+browseURL(paste0(exportPath,"SIPContourPostUtilMitigate",nb1,nb2,".pdf"))
 
 
 
@@ -3710,10 +3698,11 @@ b2=10
       )
     p
   }
-  save_image(p,paste0(exportPath,"SIPContourRiskyPostUtilReallocation",nb1,nb2,".pdf"),
-             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"SIPContourRiskyPostUtilReallocation",nb1,nb2,".pdf"))
 }
+save_image(p,paste0(exportPath,"SIPContourRiskyPostUtilReallocation",nb1,nb2,".pdf"),
+           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+browseURL(paste0(exportPath,"SIPContourRiskyPostUtilReallocation",nb1,nb2,".pdf"))
+
 
 
 w <- .8    #width
@@ -5978,10 +5967,10 @@ nb2 <- 0 # to stay homogeneous
       )
     p
   }
-  save_image(p,paste0(exportPath,"SD3dMortalityNB1.pdf"),
-             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"SD3dMortalityNB1.pdf"))
 }
+save_image(p,paste0(exportPath,"SD3dMortalityNB1.pdf"),
+           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
+browseURL(paste0(exportPath,"SD3dMortalityNB1.pdf"))
 
 
 
