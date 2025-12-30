@@ -62,6 +62,6 @@ The first section 'Create functions' contains all the function used to estimate 
 -   (optional) The characteristic of the balanced protfolio, always (50 risky/50 riskfree), average return and volatility of risky asset and return of risk-free asset (avgRisky, volRisky, and rfrate)
 -   (optional) The Gompertz law modal and dispersion parameters for group 1 and 2 (m1, b1, m2, b2)
 
-It also contains a quick example of how the function SIP2Pop_CV() can be used to compute the SIP for different level of wealth heterogeneity through benefit ratio 'y'.
+It also contains a quick example of how the function SIP2Pop_risky() can be used to compute the SIP for different level of wealth heterogeneity through benefit ratio 'y'.
 
 ## approxSIP.R
