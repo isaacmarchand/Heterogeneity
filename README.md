@@ -26,7 +26,7 @@ The Following sections separated by comments line are all the figures from the p
 -   Dimension of the figure as a percentage of a page for the width 'w' and height 'h'. (for the export only)
 -   Some adjustable parameters (for some of the figures)
 -   In bracket, all the code required to generate the figure
--   After hte brackets, some code to export the figures if needed
+-   After the brackets, some code to export the figures if needed
 
 Almost all the data contained in the figures of section 3 and 5 comes from the pre-simulated data contained in the 'simulatedData' folder. The data for the figures of section 4 is generated directly in the script.
 
@@ -50,5 +50,18 @@ The first section 'Create functions' contains all the function used to estimate 
 It also contains a quick example of how the function SIP2Pop_CV() can be used to compute the SIP for different level of wealth heterogeneity through benefit ratio 'y'.
 
 ## SIP_risky.R
+Contains a function to estimate the SIP using simulations (CV estimate doesn't allow for risky investment for now). It works for Homogeneous pools and Heterogeneous pool with 2 groups. It only works for a SIP with no upper bound on stability $\epsilon_2 = \infty$.
+
+The first section 'Create functions' contains all the function used to estimate the SIP, with SIP2Pop_risky() being the function used the estimate the SIP for a given pool and risky asset characteristics. You can give to SIP2Pop_risky()
+-   (mandatory) The number of member from group 1 and 2 (nb1 and nb2)
+-   (mandatory) The age of the members from group 1 and 2 (age1 and age2)
+-   (mandatory) The initial benefit of the members from group 1 and 2 (benefit1 and benefit2)
+-   (optional) The lower stability bound $\epsilon_1$ (epsilon)
+-   (optional) The stability confidence $\beta$ (beta)
+-   (optional) The number of simulations used to estimate the SIP (nbSimul)
+-   (optional) The characteristic of the balanced protfolio, always (50 risky/50 riskfree), average return and volatility of risky asset and return of risk-free asset (avgRisky, volRisky, and rfrate)
+-   (optional) The Gompertz law modal and dispersion parameters for group 1 and 2 (m1, b1, m2, b2)
+
+It also contains a quick example of how the function SIP2Pop_CV() can be used to compute the SIP for different level of wealth heterogeneity through benefit ratio 'y'.
 
 ## approxSIP.R
