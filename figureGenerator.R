@@ -127,7 +127,7 @@ pixelsFullHeight <- 1754*(9.3/11) #removing margins
     stability
   }
   
-  thetaK <- function(timeK, nb1=100,nb2=0,age1=65,age2=65,
+  pDeltaStar <- function(timeK, nb1=100,nb2=0,age1=65,age2=65,
                      ben1=1000, ben2=1000, epsilon = .1,
                      m1 = 85, b1 = 10,
                      m2 = 85, b2 = 10){
@@ -153,13 +153,13 @@ pixelsFullHeight <- 1754*(9.3/11) #removing margins
     return(sum(probC1*probC2))
   }
   
-  compApproxSIP <- function(nb1=100,nb2=0,age1=65,age2=65, ben1=1000, ben2=1000,
+  approxSIP2Pop <- function(nb1=100,nb2=0,age1=65,age2=65, ben1=1000, ben2=1000,
                             epsilon = .1, beta = .95,
                             m1 = 85, b1 = 10, m2 = 85, b2 = 10){
     prob <- 0
     for (k in seq(1,50,by= 1)) {
       prevProb <- prob
-      prob <- thetaK(k, nb1,nb2,age1,age2, ben1, ben2, epsilon, m1, b1, m2, b2)
+      prob <- pDeltaStar(k, nb1,nb2,age1,age2, ben1, ben2, epsilon, m1, b1, m2, b2)
       if(prob>1-beta){
         return((k-1)*(prob-(1-beta))/(prob-prevProb)
                +k*(1-(prob-(1-beta))/(prob-prevProb)))
@@ -181,11 +181,11 @@ pixelsFullHeight <- 1754*(9.3/11) #removing margins
     newBen1 <- as.vector(newA1/annuity(age1,.02))
     newBen2 <- as.vector(newA2/annuity(age2,.02))
     
-    SIP1 <- compApproxSIP(nb1 = nb1, age1 = age1, ben1 = benefit1, nb2 = 0)
+    SIP1 <- approxSIP2Pop(nb1 = nb1, age1 = age1, ben1 = benefit1, nb2 = 0)
     
-    SIP2 <- compApproxSIP(nb1 = nb2, age1 = age2, ben1 = benefit2, nb2 = 0)
+    SIP2 <- approxSIP2Pop(nb1 = nb2, age1 = age2, ben1 = benefit2, nb2 = 0)
     
-    SIPhat <- compApproxSIP(nb1 = nb1, age1 = age1, ben1 = newBen1,
+    SIPhat <- approxSIP2Pop(nb1 = nb1, age1 = age1, ben1 = newBen1,
                             nb2 = nb2, age2 = age2, ben2 = newBen2)
     c(SIPhat, newBen1/asset1,SIPhat, newBen2/asset2)
   }
@@ -235,11 +235,11 @@ pixelsFullHeight <- 1754*(9.3/11) #removing margins
     newBen1 <- as.vector(newA1/annuity(age1,.02))
     newBen2 <- as.vector(newA2/annuity(age2,.02))
     
-    SIP1 <- compApproxSIP(nb1 = nb1, age1 = age1, ben1 = benefit1, nb2 = 0)
+    SIP1 <- approxSIP2Pop(nb1 = nb1, age1 = age1, ben1 = benefit1, nb2 = 0)
     
-    SIP2 <- compApproxSIP(nb1 = nb2, age1 = age2, ben1 = benefit2, nb2 = 0)
+    SIP2 <- approxSIP2Pop(nb1 = nb2, age1 = age2, ben1 = benefit2, nb2 = 0)
     
-    SIPhat <- compApproxSIP(nb1 = nb1, age1 = age1, ben1 = newBen1,
+    SIPhat <- approxSIP2Pop(nb1 = nb1, age1 = age1, ben1 = newBen1,
                             nb2 = nb2, age2 = age2, ben2 = newBen2)
     
     diff1 <- SIPhat-SIP1
@@ -1752,7 +1752,7 @@ b2=10
     SIP_Approx <- matrix(0,length(age2),length(benefitMultiplier))
     for (i in seq_along(age2)) {
       for (j in seq_along(benefit2)) {
-        SIP_Approx[i,j] <- compApproxSIP(nb1, nb2, age1, age2[i], 
+        SIP_Approx[i,j] <- approxSIP2Pop(nb1, nb2, age1, age2[i], 
                                                   benefit1,benefit2[j],
                                                   b1 = b1, b2=b2)
       }
@@ -1790,7 +1790,7 @@ b2=10
   }
   #better and worse area
   {
-    riskSmallHomoApprox <- compApproxSIP(nb1, 0, age1, age1, benefit1,
+    riskSmallHomoApprox <- approxSIP2Pop(nb1, 0, age1, age1, benefit1,
                                          benefit1)
     
     ## get stability when group 1 and 2 are homogeneous from imported surface
@@ -1922,7 +1922,7 @@ b2=14
     SIP_Approx <- matrix(0,length(age2),length(benefitMultiplier))
     for (i in seq_along(age2)) {
       for (j in seq_along(benefit2)) {
-        SIP_Approx[i,j] <- compApproxSIP(nb1, nb2, age1, age2[i],
+        SIP_Approx[i,j] <- approxSIP2Pop(nb1, nb2, age1, age2[i],
                                          benefit1,benefit2[j], 
                                          b1=b1, b2=b2)
       }
@@ -1932,7 +1932,7 @@ b2=14
     
     SIP_SmallHomoApprox <- matrix(0,length(age2),length(benefitMultiplier))
     for (i in seq_along(age2)) {
-        SIP_SmallHomoApprox[i,] <- compApproxSIP(0, nb2, age1, age2[i], 
+        SIP_SmallHomoApprox[i,] <- approxSIP2Pop(0, nb2, age1, age2[i], 
                                                   benefit1,benefit1, 
                                                   b1=b1, b2=b2)
     }
@@ -1993,7 +1993,7 @@ b2=14
   
   #worse area
   {
-    riskSmallHomoApprox <- compApproxSIP(nb1, 0, age1, age1, benefit1,
+    riskSmallHomoApprox <- approxSIP2Pop(nb1, 0, age1, age1, benefit1,
                                          benefit1)
     
     dfworsteSIPApprox <- list(SIP = SIP_ApproxSmooth[SIP_ApproxSmooth<=SIP_SmallHomoApproxSmooth
@@ -2103,7 +2103,7 @@ b2 = 10
     riskStability <- matrix(0,length(age2),length(nb2))
     
     for (i in seq_along(age2)) {
-      riskStability[i,] <- sapply(nb2,function(n)compApproxSIP(nb1, n, age1, age2[i],
+      riskStability[i,] <- sapply(nb2,function(n)approxSIP2Pop(nb1, n, age1, age2[i],
                                                                benefit1,benefit2, 
                                                                b1=b1, b2=b2))
       sdProxy <- sapply(nb2, function(n) SD1Periode(age1, benefit1, nb1,
@@ -2204,7 +2204,7 @@ b2 = 14
     riskStability <- matrix(0,length(BMulti),length(nb2))
     
     for (i in seq_along(BMulti)) {
-      riskStability[i,] <- sapply(nb2,function(n)compApproxSIP(nb1, n, age1, age2,
+      riskStability[i,] <- sapply(nb2,function(n)approxSIP2Pop(nb1, n, age1, age2,
                                                                1,BMulti[i], 
                                                                b1=b1, b2=b2))
       sdProxy <- sapply(nb2, function(n) SD1Periode(age1, 1, nb1,
@@ -2311,7 +2311,7 @@ b2=14
     SIP_Approx <- matrix(0,length(age2vec),length(benefitMultiplier))
     for (i in seq_along(age2vec)) {
       for (j in seq_along(benefit2)) {
-        SIP_Approx[i,j] <- compApproxSIP(nb1, nb2, age1, age2vec[i], 
+        SIP_Approx[i,j] <- approxSIP2Pop(nb1, nb2, age1, age2vec[i], 
                                          benefit1,benefit2[j],
                                          b1 = b1, b2=b2)
       }
@@ -2349,7 +2349,7 @@ b2=14
   }
   
   
-  riskSmallHomo <- compApproxSIP(nb1, 0, age1, age1, benefit1,
+  riskSmallHomo <- approxSIP2Pop(nb1, 0, age1, age1, benefit1,
                                  benefit1)
   
   # extract age slice
@@ -4159,7 +4159,7 @@ benefit2 <- 500
     riskStabilityApprox <- matrix(0,length(age2vec),length(benefitMultiplier))
     for (i in seq_along(age2vec)) {
       for (j in seq_along(benefit2)) {
-        riskStabilityApprox[i,j] <- compApproxSIP(nb1, nb2, age1, age2vec[i], benefit1,
+        riskStabilityApprox[i,j] <- approxSIP2Pop(nb1, nb2, age1, age2vec[i], benefit1,
                                                   benefit2[j])
       }
     }
@@ -4169,7 +4169,7 @@ benefit2 <- 500
     riskStabilitySmallHomoApprox <- matrix(0,length(age2vec),length(benefitMultiplier))
     for (i in seq_along(age2vec)) {
       for (j in seq_along(benefit2)) {
-        riskStabilitySmallHomoApprox[i,j] <- compApproxSIP(0, nb2, age1, age2vec[i], benefit1,
+        riskStabilitySmallHomoApprox[i,j] <- approxSIP2Pop(0, nb2, age1, age2vec[i], benefit1,
                                                            benefit2[j])
       }
     }
@@ -4231,7 +4231,7 @@ benefit2 <- 500
   {
     age2vec <- seq(55, 75, by = .1)
     benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 100))
-    riskSmallHomoApprox <- compApproxSIP(nb1, 0, age1, age1, benefit1,
+    riskSmallHomoApprox <- approxSIP2Pop(nb1, 0, age1, age1, benefit1,
                                          benefit1)
     
     dfworsteSIPApprox <- list(SIP = riskStabilityApproxSmooth[riskStabilityApproxSmooth<=riskStabilitySmallHomoApproxSmooth
@@ -4362,8 +4362,8 @@ alpha <- 2 #risk aversion level
   percBenefit1 <- benefit1/asset1
   percBenefit2 <- benefit2/asset2
   
-  SIP1 <- compApproxSIP(nb1 = nb1, age1 = age1, ben1 = benefit1, nb2 = 0)
-  SIP2 <- compApproxSIP(nb1 = nb2, age1 = age2, ben1 = benefit2, nb2 = 0)
+  SIP1 <- approxSIP2Pop(nb1 = nb1, age1 = age1, ben1 = benefit1, nb2 = 0)
+  SIP2 <- approxSIP2Pop(nb1 = nb2, age1 = age2, ben1 = benefit2, nb2 = 0)
   
   
   utile1 <- utilityFn(SIP1,percBenefit1, alpha)
@@ -4775,7 +4775,7 @@ h <- .25  #height
     riskStabilityApprox <- matrix(0,length(age2vec),length(benefitMultiplier))
     for (i in seq_along(age2vec)) {
       for (j in seq_along(benefit2)) {
-        riskStabilityApprox[i,j] <- compApproxSIP(nb1, nb2, age1, age2vec[i], benefit1,
+        riskStabilityApprox[i,j] <- approxSIP2Pop(nb1, nb2, age1, age2vec[i], benefit1,
                                                   benefit2[j])
       }
     }
@@ -4785,7 +4785,7 @@ h <- .25  #height
     riskStabilitySmallHomoApprox <- matrix(0,length(age2vec),length(benefitMultiplier))
     for (i in seq_along(age2vec)) {
       for (j in seq_along(benefit2)) {
-        riskStabilitySmallHomoApprox[i,j] <- compApproxSIP(0, nb2, age1, age2vec[i], benefit1,
+        riskStabilitySmallHomoApprox[i,j] <- approxSIP2Pop(0, nb2, age1, age2vec[i], benefit1,
                                                            benefit2[j])
       }
     }
@@ -4847,7 +4847,7 @@ h <- .25  #height
   {
     age2vec <- seq(55, 75, by = .1)
     benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 100))
-    riskSmallHomoApprox <- compApproxSIP(nb1, 0, age1, age1, benefit1,
+    riskSmallHomoApprox <- approxSIP2Pop(nb1, 0, age1, age1, benefit1,
                                          benefit1)
     
     dfworsteSIPApprox <- list(SIP = riskStabilityApproxSmooth[riskStabilityApproxSmooth<=riskStabilitySmallHomoApproxSmooth
