@@ -4,14 +4,19 @@ Code used for article ...
 
 ## RUNME.sh
 
-Convenient Unix shell script to generate all the Figures for the article. Before running it you can fill in the two path variable:
+Convenient Unix shell script to generate all the Figures for the article. It can 
+be executed in the Unix terminal using the command `bash RUNME.sh`. You should
+have a working version of python3 somewhere in you computer for it to work with 
+no adjustment.
+
+By default the figures will be save in a Figure folder in your current directory.
+This and the python version you want to use can be adjusted with the two path 
+variables in the shell script:
 
 -   savePath: The path of the directory where the figures will be saved.
 -   pythonPath: the path where python or python3 is located. (can use `where python3` in bash command line to see all your available versions)
 
 The installation of python, if you don't have it installed, can be done by simply executing the commented line 24 in figureGenerator_article.R.
-
-Once all of this has been done the shell script can be executed in a Unix terminal using the command `bash RUNME.sh`
 
 ## figureGenerator_article.R
 
