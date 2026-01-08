@@ -3,8 +3,9 @@
 
 echo "Starting script..."
 
-savePath="/Users/macbook/Library/Mobile Documents/com~apple~CloudDocs/School/SFU/Research/Coding/Plots/testFigScript/"
-pythonPath="/opt/anaconda3/bin/python3"
+mkdir Figures
+savePath="./Figures/"
+pythonPath=$(which python3)
 
 Rscript figureGenerator_article.R "$savePath" "$pythonPath"
 

@@ -1,14 +1,15 @@
 ####### Packages #####
+list.of.packages <- c("plotly","reshape2","RColorBrewer","reticulate","mgcv")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
 library(plotly)
 library(reshape2)
 library(RColorBrewer)
 library(reticulate)
-library(ggplot2)
-library(htmlwidgets)
-library(webshot)
 library(mgcv)
 
-####### collect paths #####
+####### Collect paths #####
 args <- commandArgs(trailingOnly = TRUE)
 
 if(length(args)!=2){
@@ -25,7 +26,7 @@ reticulate::py_config()
 # install.packages("reticulate")
 # library(reticulate)
 # use_python(install_python())
-# py_install(c("kaleido==0.2.1", "plotly"))
+py_install(c("kaleido-core==0.2.1", "plotly"))
 
 ####### Export design choice ####
 fontType <- 'Verdana' #'Verdana' for report 'Times New Roman' for paper
