@@ -1,32 +1,30 @@
 ####### Packages #####
-list.of.packages <- c("plotly","reshape2","RColorBrewer","reticulate","mgcv")
+list.of.packages <- c("plotly","reshape2","RColorBrewer","htmlwidgets","webshot","pandoc","mgcv")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
 library(plotly)
 library(reshape2)
 library(RColorBrewer)
-library(reticulate)
+library(htmlwidgets)
+library(webshot)
+library(pandoc)
 library(mgcv)
 
 ####### Collect paths #####
 args <- commandArgs(trailingOnly = TRUE)
 
-if(length(args)!=2){
-  stop("The script requires 2 trailing arguments, 1.the path where you want the figures saved 2.the path to your python software")
+if(length(args)!=1){
+  stop("The script requires 1 trailing arguments, 1.the path where you want the figures saved")
 }
 
 ####### Export ######
 exportPath <- args[1]
 
-reticulate::use_python(args[2])
-reticulate::py_config()
-
-# ####if need to install python
-# install.packages("reticulate")
-# library(reticulate)
-# use_python(install_python())
-py_install(c("kaleido-core==0.2.1", "plotly"))
+htmlDir <- "htmlOutput/"
+if (!file.exists(paste0(exportPath,htmlDir))){
+  dir.create(paste0(exportPath,htmlDir))
+}
 
 ####### Export design choice ####
 fontType <- 'Verdana' #'Verdana' for report 'Times New Roman' for paper
@@ -405,10 +403,11 @@ beta <- .95       #treshhold illustrated in plot
     fig
   }
 }
-save_image(fig,paste0(exportPath,"smoothedVSempericalSIP.pdf"),
-           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-browseURL(paste0(exportPath,"smoothedVSempericalSIP.pdf"))
-
+saveWidget(fig, paste0(exportPath,htmlDir,"Fig1.html"), selfcontained = FALSE)
+webshot(paste0(exportPath,htmlDir,"Fig1.html"),
+        file   = paste0(exportPath,"Fig1.jpeg"),
+        vwidth = w*pixelsFullWidth, vheight = h*pixelsFullHeight,  # canvas size
+        zoom   = 3)
 
 ####### Fig 2:SIP Homogeneous evolution with nb1 ########
 #dimensions as percentage of page
@@ -484,9 +483,11 @@ b1=10
     p
   }
 }
-save_image(p,paste0(exportPath,"homoSIP_Smooth.pdf"),
-           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-browseURL(paste0(exportPath,"homoSIP_Smooth.pdf"))
+saveWidget(p, paste0(exportPath,htmlDir,"Fig2.html"), selfcontained = FALSE)
+webshot(paste0(exportPath,htmlDir,"Fig2.html"),
+        file   = paste0(exportPath,"Fig2.jpeg"),
+        vwidth = w*pixelsFullWidth, vheight = h*pixelsFullHeight,  # canvas size
+        zoom   = 3)
 
 
 
@@ -568,9 +569,11 @@ age1 = 65
     p
   }
 }
-save_image(p,paste0(exportPath,"SIPMortalityHeteNb.pdf"),
-           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-browseURL(paste0(exportPath,"SIPMortalityHeteNb.pdf"))
+saveWidget(p, paste0(exportPath,htmlDir,"Fig3.html"), selfcontained = FALSE)
+webshot(paste0(exportPath,htmlDir,"Fig3.html"),
+        file   = paste0(exportPath,"Fig3.jpeg"),
+        vwidth = w*pixelsFullWidth, vheight = h*pixelsFullHeight,  # canvas size
+        zoom   = 3)
 
 
 
@@ -651,9 +654,11 @@ age2 = 65
     p
   }
 }
-save_image(p,paste0(exportPath,"SIPWealthHeteNb.pdf"),
-           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-browseURL(paste0(exportPath,"SIPWealthHeteNb.pdf"))
+saveWidget(p, paste0(exportPath,htmlDir,"Fig4.html"), selfcontained = FALSE)
+webshot(paste0(exportPath,htmlDir,"Fig4.html"),
+        file   = paste0(exportPath,"Fig4.jpeg"),
+        vwidth = w*pixelsFullWidth, vheight = h*pixelsFullHeight,  # canvas size
+        zoom   = 3)
 
 
 
@@ -785,9 +790,11 @@ b2=10
     p
   }
 }
-save_image(p,paste0(exportPath,"SIPWealthHeteMortality.pdf"),
-           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-browseURL(paste0(exportPath,"SIPWealthHeteMortality.pdf"))
+saveWidget(p, paste0(exportPath,htmlDir,"Fig5.html"), selfcontained = FALSE)
+webshot(paste0(exportPath,htmlDir,"Fig5.html"),
+        file   = paste0(exportPath,"Fig5.jpeg"),
+        vwidth = w*pixelsFullWidth, vheight = h*pixelsFullHeight,  # canvas size
+        zoom   = 3)
 
 
 
@@ -900,9 +907,11 @@ b2=10
     p
   }
 }
-save_image(p,paste0(exportPath,"SIPMortalityHeteWealth.pdf"),
-           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-browseURL(paste0(exportPath,"SIPMortalityHeteWealth.pdf"))
+saveWidget(p, paste0(exportPath,htmlDir,"Fig6.html"), selfcontained = FALSE)
+webshot(paste0(exportPath,htmlDir,"Fig6.html"),
+        file   = paste0(exportPath,"Fig6.jpeg"),
+        vwidth = w*pixelsFullWidth, vheight = h*pixelsFullHeight,  # canvas size
+        zoom   = 3)
 
 
 
@@ -1036,9 +1045,11 @@ b2=10
     p
   }
 }
-save_image(p,paste0(exportPath,"SIPContour1Perspective",nb1,nb2,".pdf"),
-           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-browseURL(paste0(exportPath,"SIPContour1Perspective",nb1,nb2,".pdf"))
+saveWidget(p, paste0(exportPath,htmlDir,"Fig7.html"), selfcontained = FALSE)
+webshot(paste0(exportPath,htmlDir,"Fig7.html"),
+        file   = paste0(exportPath,"Fig7.jpeg"),
+        vwidth = w*pixelsFullWidth, vheight = h*pixelsFullHeight,  # canvas size
+        zoom   = 3)
 
 
 
@@ -1152,9 +1163,12 @@ for(nb2 in c(100,50,200)){
       p
     }
   }
-  save_image(p,paste0(exportPath,"SIPContour2Perspective",nb1,nb2,".pdf"),
-             width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-  browseURL(paste0(exportPath,"SIPContour2Perspective",nb1,nb2,".pdf"))
+  figNb <- ifelse(nb2==100,8,ifelse(nb2==50,9,10))
+  saveWidget(p, paste0(exportPath,htmlDir,"Fig",figNb,".html"), selfcontained = FALSE)
+  webshot(paste0(exportPath,htmlDir,"Fig",figNb,".html"),
+          file   = paste0(exportPath,"Fig",figNb,".jpeg"),
+          vwidth = w*pixelsFullWidth, vheight = h*pixelsFullHeight,  # canvas size
+          zoom   = 3)
   
 }
 
@@ -1288,9 +1302,11 @@ b2=10
     p
   }
 }
-save_image(p,paste0(exportPath,"SIPContourRiskyAsset",nb1,nb2,".pdf"),
-           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-browseURL(paste0(exportPath,"SIPContourRiskyAsset",nb1,nb2,".pdf"))
+saveWidget(p, paste0(exportPath,htmlDir,"Fig11.html"), selfcontained = FALSE)
+webshot(paste0(exportPath,htmlDir,"Fig11.html"),
+        file   = paste0(exportPath,"Fig11.jpeg"),
+        vwidth = w*pixelsFullWidth, vheight = h*pixelsFullHeight,  # canvas size
+        zoom   = 3)
 
 ####### Fig 12:SIP Contour Plot Both Groups' Perspective Risky Asset########
 #dimensions as percentage of page
@@ -1405,9 +1421,11 @@ b2=10
     p
   }
 }
-save_image(p,paste0(exportPath,"SIPContourRiskyAsset2Perspective",nb1,nb2,".pdf"),
-           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-browseURL(paste0(exportPath,"SIPContourRiskyAsset2Perspective",nb1,nb2,".pdf"))
+saveWidget(p, paste0(exportPath,htmlDir,"Fig12.html"), selfcontained = FALSE)
+webshot(paste0(exportPath,htmlDir,"Fig12.html"),
+        file   = paste0(exportPath,"Fig12.jpeg"),
+        vwidth = w*pixelsFullWidth, vheight = h*pixelsFullHeight,  # canvas size
+        zoom   = 3)
 
 
 
@@ -1545,9 +1563,11 @@ nb1 <- 100 #no other option
     }
   }
 }
-save_image(p,paste0(exportPath,"SIPHeteMortDist_age.pdf"),
-           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-browseURL(paste0(exportPath,"SIPHeteMortDist_age.pdf"))
+saveWidget(p, paste0(exportPath,htmlDir,"Fig13.html"), selfcontained = FALSE)
+webshot(paste0(exportPath,htmlDir,"Fig13.html"),
+        file   = paste0(exportPath,"Fig13.jpeg"),
+        vwidth = w*pixelsFullWidth, vheight = h*pixelsFullHeight,  # canvas size
+        zoom   = 3)
 ###############################################################################
 # Section 4 Approx SIP 
 ###############################################################################
@@ -1717,9 +1737,11 @@ b2=10
     p
   }
 }
-save_image(p,paste0(exportPath,"ApproxSIPContour1Perspective",nb1,nb2,"_b",b1,b2,".pdf"),
-           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-browseURL(paste0(exportPath,"ApproxSIPContour1Perspective",nb1,nb2,"_b",b1,b2,".pdf"))
+saveWidget(p, paste0(exportPath,htmlDir,"Fig14.html"), selfcontained = FALSE)
+webshot(paste0(exportPath,htmlDir,"Fig14.html"),
+        file   = paste0(exportPath,"Fig14.jpeg"),
+        vwidth = w*pixelsFullWidth, vheight = h*pixelsFullHeight,  # canvas size
+        zoom   = 3)
 
 ####### Fig 15:Approx SIP Contour Plot Both Groups' Perspective ########
 #dimensions as percentage of page
@@ -1897,10 +1919,11 @@ b2=10
     p
   }
 }
-save_image(p,paste0(exportPath,"ApproxSIPContour2Perspective",nb1,nb2,"_b",b1,b2,".pdf"),
-           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-browseURL(paste0(exportPath,"ApproxSIPContour2Perspective",nb1,nb2,"_b",b1,b2,".pdf"))
-
+saveWidget(p, paste0(exportPath,htmlDir,"Fig15.html"), selfcontained = FALSE)
+webshot(paste0(exportPath,htmlDir,"Fig15.html"),
+        file   = paste0(exportPath,"Fig15.jpeg"),
+        vwidth = w*pixelsFullWidth, vheight = h*pixelsFullHeight,  # canvas size
+        zoom   = 3)
 
 
 ###############################################################################
@@ -2086,9 +2109,11 @@ b2 = 10
     p
   }
 }
-save_image(p,paste0(exportPath,"SIPContourPostMitigate",nb1,nb2,".pdf"),
-           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-browseURL(paste0(exportPath,"SIPContourPostMitigate",nb1,nb2,".pdf"))
+saveWidget(p, paste0(exportPath,htmlDir,"Fig16.html"), selfcontained = FALSE)
+webshot(paste0(exportPath,htmlDir,"Fig16.html"),
+        file   = paste0(exportPath,"Fig16.jpeg"),
+        vwidth = w*pixelsFullWidth, vheight = h*pixelsFullHeight,  # canvas size
+        zoom   = 3)
 
 
 ####### Fig 17:Initial Benefit and SIP Preferences #######
@@ -2342,263 +2367,8 @@ b2=10
     p
   }
 }
-save_image(p,paste0(exportPath,"SIPContourPostUtilMitigate",nb1,nb2,".pdf"),
-           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-browseURL(paste0(exportPath,"SIPContourPostUtilMitigate",nb1,nb2,".pdf"))
-
-####### Fig 18:(w/ risky asset) Initial Benefit and SIP Preferences #######
-# dimensions as percentage of page
-w <- .7    #width
-h <- .25  #height
-
-# not adjustable parameters
-nb1 <- 100
-age1 <- 65
-benefit1 <- 100
-nb2 <- 100
-age2 <- 70
-benefit2 <- 500
-
-alpha <- 2 #risk aversion level
-
-b1=10 #mortality param
-b2=10
-# contour plot Fig 18
-{
-  
-  asset1 <- as.vector(benefit1*annuity(age1,.02))
-  asset2 <- as.vector(benefit2*annuity(age2,.02))
-  
-  percBenefit1 <- benefit1/asset1
-  percBenefit2 <- benefit2/asset2
-  
-  # import base stability when group 1 is on its own
-  riskSmallHomo <- readRDS(paste0("simulatedData/BaseRisk_risky_", 
-                                  age1,"_",nb1,".rds"))
-  
-  # import smoothed stability surface
-  name <- paste0("simulatedData/smoothedSIP_risky_nb",nb1,nb2,"_b",b1,b2,".rds")
-  riskStability <- readRDS(name)
-  
-  # import smoothed stability when group 2 is on its own
-  name <- paste0("simulatedData/smoothedSIP_risky_nb",0,nb2,"_b",b1,b2,".rds")
-  riskStabilitySmallHomo <- readRDS(name)
-  
-  
-  age2Vec <- seq(55, 75, by = .1)
-  benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 101))
-  
-  SIP1 <- riskSmallHomo
-  SIP2 <- riskStabilitySmallHomo[age2==age2Vec,1]
-  
-  
-  utile1 <- utilityFn(SIP1,percBenefit1, alpha)
-  SIPIndif1 <- seq(1,30,.5)
-  indifferenceCurve1 <- utilityCurve(utile1,SIPIndif1, alpha)
-  
-  utile2 <- utilityFn(SIP2,percBenefit2, alpha)
-  SIPIndif2 <- seq(1,30,.5)
-  indifferenceCurve2 <- utilityCurve(utile2,SIPIndif2, alpha)
-  
-  baseSplit <- (asset1*nb1)/(asset1*nb1+asset2*nb2)
-  baseCase <- meanVarMatrix(nb1 = nb1, age1 = age1,
-                            asset1 = asset1,
-                            nb2 = nb2, age2 = age2,
-                            asset2 = asset2,
-                            matSIP = riskStability,
-                            assetSplit = baseSplit)
-  #background indifference
-  splits <- seq(0.01,.99,0.001)
-  traceVec <- sapply(splits, function(a)  meanVarMatrix(nb1 = nb1, age1 = age1,
-                                                        asset1 = asset1,
-                                                        nb2 = nb2, age2 = age2,
-                                                        asset2 = asset2,
-                                                        matSIP = riskStability,
-                                                        assetSplit = a))
-  # Create grid
-  grid1 <- list(x = traceVec[1,], y = traceVec[2,], splits = splits)
-  #fit model
-  gam_fit1 <- gam(x ~ te(y, k=20), data = grid1)
-  summary(gam_fit1)
-  grid1$smoothyX <- predict(gam_fit1, newdata = grid1)
-  # Create grid
-  grid2 <- list(x = traceVec[3,], y = traceVec[4,], splits = splits)
-  #fit model
-  gam_fit2 <- gam(x ~ te(y, k=20), data = grid2)
-  summary(gam_fit2)
-  grid2$smoothyX <- predict(gam_fit2, newdata = grid2)
-  
-  #get worst points
-  {
-    #extend indifference curve (check for all benefit level of SIP curve)
-    indifferenceCurve1Extended <- utilityCurve(utile1,grid1$smoothyX,alpha)
-    indifferenceCurve2Extended <- utilityCurve(utile2,grid2$smoothyX,alpha)
-    
-    #compare for all benefit level
-    diff1 <- grid1$y - indifferenceCurve1Extended
-    diff2 <- grid2$y - indifferenceCurve2Extended
-    
-    noGoodIndex1 <- which(diff1<=0)
-    noGoodIndex2 <- which(diff2<=0)
-    
-  }
-  
-  goodRebalanceId <- seq_along(splits)[!seq_along(splits)%in%c(noGoodIndex1,
-                                                               noGoodIndex2)]
-  minY <- (grid2$y[min(goodRebalanceId)]*asset2)/(grid1$y[min(goodRebalanceId)]*asset1)
-  maxY <- (grid2$y[max(goodRebalanceId)]*asset2)/(grid1$y[max(goodRebalanceId)]*asset1)
-  
-  currentY <- benefit2/benefit1
-  
-  # get worse areas (no better area possible for both at the same time)
-  {
-    age2Vec <- seq(55, 75, by = .1)
-    benefitMultiplier <- exp(seq(log(1/10),log(10), length.out = 101))
-    
-    
-    dfworsteSIP <- list(SIP = riskStability[riskStability<=riskStabilitySmallHomo
-                                            |riskStability<=riskSmallHomo])
-    dfworsteSIP$age2Vec <-  matrix(rep(age2Vec, length(benefitMultiplier)),
-                                   ncol = length(benefitMultiplier))[riskStability<=riskStabilitySmallHomo
-                                                                     |riskStability<=riskSmallHomo]
-    dfworsteSIP$benefitMultiplier <- matrix(rep(benefitMultiplier, length(age2Vec)),
-                                            nrow = length(age2Vec),
-                                            byrow = T)[riskStability<=riskStabilitySmallHomo
-                                                       |riskStability<=riskSmallHomo]
-    
-  }
-  
-  #table info
-  {
-    totAsset <- (nb1*asset1+nb2*asset2)
-    
-    
-    benchmarkObjFn1 <- utile1
-    benchmarkObjFn2 <- utile2
-    SIP1benchmark <- riskSmallHomo
-    SIP2benchmark <- riskStabilitySmallHomo[age2Vec ==age2,
-                                            which.min(abs(benefitMultiplier-currentY))]
-    
-    pps1natural <- asset1/benefit1
-    pps2natural <- asset2/benefit2
-    naturalSIP <- riskStability[age2Vec ==age2,
-                                which.min(abs(benefitMultiplier-currentY))]
-    naturalObjFn1 <- utilityFn(naturalSIP,1/pps1natural)
-    naturalObjFn2 <- utilityFn(naturalSIP,1/pps2natural)
-    
-    
-    lowLimSIP <- riskStability[age2Vec == age2,
-                               which.min(abs(benefitMultiplier-minY))]
-    lowLimAssetRatio <- as.vector(minY*annuity(age2,.02)/annuity(age1,.02))
-    lowLimAsset1 <- totAsset/(nb1+nb2*lowLimAssetRatio)
-    lowLimAsset2 <- (totAsset-nb1*lowLimAsset1)/nb2
-    lowLimBen1 <- as.vector(lowLimAsset1/annuity(age1, .02))
-    lowLimBen2 <- as.vector(lowLimAsset2/annuity(age2, .02))
-    pps1lowLim <- asset1/lowLimBen1
-    pps2lowLim <- asset2/lowLimBen2
-    lowLimObjFn1 <- utilityFn(lowLimSIP,1/pps1lowLim)
-    lowLimObjFn2 <- utilityFn(lowLimSIP,1/pps2lowLim)
-    
-    upLimSIP <- riskStability[age2Vec == age2,
-                              which.min(abs(benefitMultiplier-maxY))]
-    upLimAssetRatio <- as.vector(maxY*annuity(age2,.02)/annuity(age1,.02))
-    upLimAsset1 <- totAsset/(nb1+nb2*upLimAssetRatio)
-    upLimAsset2 <- (totAsset-nb1*upLimAsset1)/nb2
-    upLimBen1 <- as.vector(upLimAsset1/annuity(age1, .02))
-    upLimBen2 <- as.vector(upLimAsset2/annuity(age2, .02))
-    pps1upLim <- asset1/upLimBen1
-    pps2upLim <- asset2/upLimBen2
-    upLimObjFn1 <- utilityFn(upLimSIP,1/pps1upLim)
-    upLimObjFn2 <- utilityFn(upLimSIP,1/pps2upLim)
-  
-  }
-  
-  # contour Plot
-  {
-    # Prepare data in long format
-    df <- melt(riskStability)
-    colnames(df) <- c("ageIndex", "benefitIndex", "SIP")
-    df$benefitMultiplier <- benefitMultiplier[df$benefitIndex]
-    df$age2Vec <- age2Vec[df$ageIndex]
-    
-    # Create contour plot
-    p <- plot_ly(
-      data = df,
-      x = ~age2Vec,
-      y = ~benefitMultiplier,
-      z = ~SIP,
-      type = "contour",
-      showscale = FALSE,
-      contours = list(
-        coloring = "lines",  # or "lines", "none"
-        showlabels = TRUE
-      ),
-      line = list(smoothing = 0),
-      colorscale = list(c(0, "black"), c(1, "black")),
-      reversescale = FALSE
-    ) %>%
-      add_trace(
-        data = dfworsteSIP,
-        x = ~age2Vec,
-        y = ~benefitMultiplier,
-        type = "scatter",
-        mode = "markers",
-        marker = list(color = "rgba(255, 99, 71, 0.2)", size = 6, symbol = "circle"),
-        name = "No No Region",
-        inherit = FALSE
-      ) %>%
-      add_trace(
-        x = c(age2),
-        y = c(currentY),
-        type = "scatter",
-        mode = "markers",
-        marker = list(color = "blue", size = 5, symbol = "circle"),
-        name = "Current point",
-        inherit = FALSE
-      ) %>%
-      add_trace(
-        x = c(age2,age2),
-        y = c(minY,maxY),
-        type = "scatter",
-        mode = "lines",
-        line = list(color = "green", width = 5),
-        name = "good reallocation",
-        inherit = FALSE
-      )%>%
-      layout(
-        font = list(family = fontType),
-        plot_bgcolor = "lightgrey",   # uniform background color
-        paper_bgcolor = "white",  # outside background
-        xaxis = list(title = list(text = "Age of members in Group 2",
-                                  standoff = 5),
-                     showgrid = FALSE,
-                     range = c(min(df$age2Vec), max(df$age2Vec)),
-                     titlefont = axisFont,
-                     tickfont = list(size = 12),
-                     ticks    = "outside",
-                     ticklen  = 8,
-                     showline = TRUE, mirror = TRUE, zeroline = FALSE
-        ),
-        yaxis = list(title = list(text = "Initial benefit of Group 2",
-                                  standoff = 5),
-                     type = "log",
-                     showgrid = FALSE,
-                     range= log(c(min(df$benefitMultiplier),
-                                  max(df$benefitMultiplier)),10),
-                     titlefont = axisFont,
-                     tickfont = list(size = 12),
-                     ticks    = "outside",
-                     ticklen  = 8,
-                     showline = TRUE, mirror = TRUE, zeroline = FALSE
-        ),
-        margin = list(t = 50, b=40),
-        showlegend = F
-      )
-    p
-  }
-}
-save_image(p,paste0(exportPath,"SIPContourRiskyPostUtilReallocation",nb1,nb2,".pdf"),
-           width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
-browseURL(paste0(exportPath,"SIPContourRiskyPostUtilReallocation",nb1,nb2,".pdf"))
-
-
+saveWidget(p, paste0(exportPath,htmlDir,"Fig17.html"), selfcontained = FALSE)
+webshot(paste0(exportPath,htmlDir,"Fig17.html"),
+        file   = paste0(exportPath,"Fig17.jpeg"),
+        vwidth = w*pixelsFullWidth, vheight = h*pixelsFullHeight,  # canvas size
+        zoom   = 3)

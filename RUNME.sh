@@ -5,8 +5,7 @@ echo "Starting script..."
 
 mkdir Figures
 savePath="./Figures/"
-pythonPath=$(which python3)
 
-Rscript figureGenerator_article.R "$savePath" "$pythonPath"
+Rscript figureGenerator_article.R "$savePath"
 
 echo "Script finished."

@@ -10,7 +10,7 @@ library(mgcv)
 
 ####### Export ######
 exportPath <- paste0("/Users/macbook/Library/Mobile\ Documents/com~apple~CloudDocs/School/SFU/Research/Coding/Plots/",
-                     "January8th/")
+                     "January16th/")
 
 reticulate::use_python("/opt/anaconda3/bin/python3")
 # ####if need to install python
