@@ -2590,8 +2590,8 @@ browseURL(paste0(exportPath,"tpx_b",b,".pdf"))
 ###############################################################################
 ####### Fig 16:Example pool post mitigation SIP only #######
 #dimensions as percentage of page
-w <- .7    #width
-h <- .25  #height
+w <- .8    #width
+h <- .3  #height
 
 # adjustable parameters
 nb2 <- 100        # 50, 100 and 200 available for all
@@ -2775,8 +2775,8 @@ browseURL(paste0(exportPath,"SIPContourPostMitigate",nb1,nb2,".pdf"))
 
 ####### Fig 17:Initial Benefit and SIP Preferences #######
 # dimensions as percentage of page
-w <- .7    #width
-h <- .25  #height
+w <- .8    #width
+h <- .3  #height
 
 # not adjustable parameters
 nb1 <- 100
@@ -3450,8 +3450,8 @@ h <- .2  #height
 
 ####### Fig 18:(w/ risky asset) Initial Benefit and SIP Preferences #######
 # dimensions as percentage of page
-w <- .7    #width
-h <- .25  #height
+w <- .8    #width
+h <- .3  #height
 
 # not adjustable parameters
 nb1 <- 100

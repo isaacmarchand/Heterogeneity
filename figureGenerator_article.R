@@ -1931,8 +1931,8 @@ webshot(paste0(exportPath,htmlDir,"Fig15.html"),
 ###############################################################################
 ####### Fig 16:Example pool post mitigation SIP only #######
 #dimensions as percentage of page
-w <- .7    #width
-h <- .25  #height
+w <- .8    #width
+h <- .3  #height
 
 # adjustable parameters
 nb2 <- 100        # 50, 100 and 200 available for all
@@ -2118,8 +2118,8 @@ webshot(paste0(exportPath,htmlDir,"Fig16.html"),
 
 ####### Fig 17:Initial Benefit and SIP Preferences #######
 # dimensions as percentage of page
-w <- .7    #width
-h <- .25  #height
+w <- .8    #width
+h <- .3  #height
 
 # not adjustable parameters
 nb1 <- 100
