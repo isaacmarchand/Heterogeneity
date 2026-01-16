@@ -2768,9 +2768,15 @@ b2 = 10
     p
   }
 }
+saveWidget(p, paste0(exportPath,"SIPContourPostMitigate.html"), selfcontained = TRUE)
+webshot(paste0(exportPath,"SIPContourPostMitigate.html"),
+        file   = paste0(exportPath,"SIPContourPostMitigate.jpeg"),
+        vwidth = 720, vheight = 480,  # canvas size
+        zoom   = 3)
 save_image(p,paste0(exportPath,"SIPContourPostMitigate",nb1,nb2,".pdf"),
            width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
 browseURL(paste0(exportPath,"SIPContourPostMitigate",nb1,nb2,".pdf"))
+
 
 
 ####### Fig 17:Initial Benefit and SIP Preferences #######
