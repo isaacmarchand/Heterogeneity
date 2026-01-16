@@ -1039,7 +1039,7 @@ w <- .8    #width
 h <- .3  #height
 
 # adjustable parameters
-nb2 <- 200     #  100, 50 and 200 available for Fig 8-9-10 respectively.
+nb2 <- 50     #  100, 50 and 200 available for Fig 8-9-10 respectively.
 
 # Generate plot
 {
@@ -2768,11 +2768,11 @@ b2 = 10
     p
   }
 }
-saveWidget(p, paste0(exportPath,"SIPContourPostMitigate.html"), selfcontained = TRUE)
-webshot(paste0(exportPath,"SIPContourPostMitigate.html"),
-        file   = paste0(exportPath,"SIPContourPostMitigate.jpeg"),
-        vwidth = 720, vheight = 480,  # canvas size
-        zoom   = 3)
+# saveWidget(p, paste0(exportPath,"SIPContourPostMitigate.html"), selfcontained = TRUE)
+# webshot(paste0(exportPath,"SIPContourPostMitigate.html"),
+#         file   = paste0(exportPath,"SIPContourPostMitigate.jpeg"),
+#         vwidth = 720, vheight = 480,  # canvas size
+#         zoom   = 3)
 save_image(p,paste0(exportPath,"SIPContourPostMitigate",nb1,nb2,".pdf"),
            width = w*pixelsFullWidth, height = h*pixelsFullHeight, scale = 1)
 browseURL(paste0(exportPath,"SIPContourPostMitigate",nb1,nb2,".pdf"))
