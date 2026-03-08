@@ -25,7 +25,9 @@
                                      m1 = 85, b1 = 10,
                                      m2 = 85, b2 = 10){
     #compute hurdle rate as expected return
-    hrate <- (1-.5)*rfrate+.5*.07
+    r_mean <- ((1-.5)*rfrate+.5*.07)
+    r_sd <- .5*.15
+    hrate <- log(exp(r_mean+r_sd^2/2))
     
     #simul death
     survProb1 <- c(tpx(1,age1:120, m=m1, b=b1),0,0,0,0,0,0,0,0,0,0,0,0,0,0,0) #no one survive to age 121
