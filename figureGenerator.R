@@ -10,7 +10,7 @@ library(mgcv)
 
 ####### Export ######
 exportPath <- paste0("/Users/macbook/Library/Mobile\ Documents/com~apple~CloudDocs/School/SFU/Research/Coding/Plots/",
-                     "January16th/")
+                     "March5th/")
 
 reticulate::use_python("/opt/anaconda3/bin/python3")
 # ####if need to install python
@@ -429,7 +429,7 @@ b1=10
   #plot
   {
     colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
-    colors <- rep(colors, length.out = nrow(riskStability))  # ensure enough colors
+    colors <- rep(colors, length.out = nrow(riskStability)+1)  # ensure enough colors
     
     p <- plot_ly() 
     
@@ -441,7 +441,7 @@ b1=10
         y = riskStability[i,],
         type = 'scatter',
         mode = 'lines',
-        line = list(color = colors[i]),
+        line = list(color = colors[i+1]),
         name = paste0("Age ", age1[i])
       )
     }
@@ -691,7 +691,7 @@ b2=10
   #plot
   {
     colors <- rgb(rgbSOA[,1],rgbSOA[,2],rgbSOA[,3]) #can use rgb code instead
-    colors <- rep(colors, length.out = nrow(slices))  # ensure enough colors
+    colors <- rep(colors, length.out = nrow(slices)+1)  # ensure enough colors
     
     p <- plot_ly() 
     
@@ -703,7 +703,7 @@ b2=10
         y = slices[i,],
         type = 'scatter',
         mode = 'lines',
-        line = list(color = colors[i]),
+        line = list(color = colors[i+1]),
         name = paste0("Age ", age2[i])
       )
       
@@ -716,7 +716,7 @@ b2=10
         y = c(min(slices,riskSmallHomo)-1, max(slices,homoSIP)+1),
         type = 'scatter',
         mode = 'lines',
-        line = list(dash = 'dot', color = colors[i]),
+        line = list(dash = 'dot', color = colors[i+1]),
         name = paste("Max stability age", age2[i]),
         showlegend=F
       )
@@ -1223,7 +1223,10 @@ b2=10
       showscale = FALSE,
       contours = list(
         coloring = "lines",  # or "lines", "none"
-        showlabels = TRUE
+        showlabels = TRUE,
+        start = 6.5,
+        end = 6.01,
+        size = .03
       ),
       line = list(smoothing = 0),
       colorscale = list(c(0, "black"), c(1, "black")),
@@ -1287,7 +1290,7 @@ browseURL(paste0(exportPath,"SIPContourRiskyAsset",nb1,nb2,".pdf"))
 
 ####### Fig 12:SIP Contour Plot Both Groups' Perspective Risky Asset########
 #dimensions as percentage of page
-w <- .8    #width
+w <- .8   #width
 h <- .3  #height
 
 # adjustable parameters
@@ -1350,7 +1353,10 @@ b2=10
       showscale = FALSE,
       contours = list(
         coloring = "lines",  # or "lines", "none"
-        showlabels = TRUE
+        showlabels = TRUE,
+        start = 6.5,
+        end = 6.01,
+        size = .03
       ),
       line = list(smoothing = 0),
       colorscale = list(c(0, "black"), c(1, "black")),
@@ -1895,7 +1901,7 @@ nb2 <- 100     # 50, 100 and 200 to match section 3.
 age1 <- 65 
 nb1 <- 100 
 b1=10
-b2=14
+b2=10
 
 
 {

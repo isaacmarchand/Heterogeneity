@@ -1244,7 +1244,10 @@ b2=10
       showscale = FALSE,
       contours = list(
         coloring = "lines",  # or "lines", "none"
-        showlabels = TRUE
+        showlabels = TRUE,
+        start = 6.5,
+        end = 6.01,
+        size = .03
       ),
       line = list(smoothing = 0),
       colorscale = list(c(0, "black"), c(1, "black")),
@@ -1373,7 +1376,10 @@ b2=10
       showscale = FALSE,
       contours = list(
         coloring = "lines",  # or "lines", "none"
-        showlabels = TRUE
+        showlabels = TRUE,
+        start = 6.5,
+        end = 6.01,
+        size = .03
       ),
       line = list(smoothing = 0),
       colorscale = list(c(0, "black"), c(1, "black")),
