@@ -21,12 +21,13 @@
   # OUTPUT: integer giving the number of years the cumulative adjustement remained stable.
   StabilityCalc2PopRisky <- function(nb1, nb2, age1, age2, benefit1,
                                      benefit2, epsilonDown = .1,
-                                     portReturn = rep(.02,120), rfrate = .02,
+                                     portReturn = rep(.045,120),
+				     avgRisky = .07, volRisky = .15, rfrate = .02,
                                      m1 = 85, b1 = 10,
                                      m2 = 85, b2 = 10){
     #compute hurdle rate as expected return
-    r_mean <- ((1-.5)*rfrate+.5*.07)
-    r_sd <- .5*.15
+    r_mean <- ((1-.5)*rfrate+.5*avgRisky)
+    r_sd <- .5*volRisky
     hrate <- log(exp(r_mean+r_sd^2/2))
     
     #simul death
